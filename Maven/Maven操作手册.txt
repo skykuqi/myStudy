@@ -1,0 +1,277 @@
+一.maven的作用
+a.管理jar包
+	1.增加第三方jar包
+	2.管理jar包之间的依赖关系
+		自动关联下载所有的jar包及其依赖jar包并且不会冲突
+b.将项目拆分成若干和模块,可以将多个模块(项目)合成为一个项目
+
+二.Maven的概念
+	是一个基于java平台的自动化构建工具
+	make--ant--maven--gradle(学习使用难度较大)
+
+Eclipse:
+	java -- class --运行 (eclipse自动帮我们构建class)
+maven:
+
+清理:	清空编译的结果,为重新编译做准备
+编译:	java - class
+测试:	单元测试  开发人员  测试人员 针对于项目中的关键点进行测试,也可用测试代码去测试开发代码
+报告:	将测试的结果进行显示
+打包:	将项目中包含的多个文件,压缩成多个文件,用于安装或部署
+安装:	将打成的包放到	本地仓库
+	本地仓库:只需要一份jar包,共享
+	中央仓库:如果本地仓库不存在,则可以通过中央仓库下载,
+	中央仓库镜像:减轻中央仓库的压力
+部署:	将打成的包放到	服务器上准备运行
+		-Eclipse中部署的web项目可以运行
+		-将项目复制到tomcat/webapps中则不能运行
+		-项目可以在webapps中直接运行
+	
+		Eclipse中的项目,在部署时,会生成一个对象的部署项目(在wtpwebapps)中
+		区别在于其中没有源码src文件,只有编译后的class文件和jsp文件
+		二者目录结构不一样,如果要在tomcat中运行一个项目,则必须严格遵循tomcat的目录结构
+		
+		Eclipse中的项目想要在Tomcat中运行,需要部署
+			a.eclipse中add and remove
+			b.将该项目打包成.war中,该该文件直接复制到tomcat/webapps中就可直接运行
+
+自动化构建工具Maven将原材料(java.js.css.html.jpg) -- 产品(可发布的项目)  --自动构建
+		--将Java.js.jsp等各个文件 进行筛选.组装,变成一个可以直接运行的项目
+		--大米 -->米饭
+
+三.Maven的使用
+
+a.下载配置Maven  解压缩
+b.检查配置JAVA_HOME  配置MAVEN_HOME(M2_HOME)  
+	配置path %MAVEN_HOME%\bin
+
+	在cmd窗口中mvn -v可查看是否配置成功
+c.本地仓库的配置
+	默认本地仓库 Default: ${user.home}/.m2/repository  c盘 user
+	配置本地仓库  <localRepository>F:/mavenrep</localRepository>
+
+d.使用maven
+	约定优于配置
+
+	硬编码方式: job.setPath("d://abd");
+	配置方式: job 
+		config.xml
+		<path>d://abd</path>
+	约定:老地方见,项目开发时已经约定好,使用默认值 job
+	
+	运行项目:main
+	测试项目:test
+	
+	maven约定的目录结构
+		src:
+			main:				程序功能代码
+				java:			java代码
+				resources:		资源代码,配置代码
+			test;		
+				java:			测试代码
+				resources:
+
+		pom.xml(与src同级)	gav			项目对象模型
+			<groupId>域名反转.大的项目名</groupId>
+			<groupId>com.sky.maven</groupId>
+			<atrifactId>HelloWord</atrifactId>	子模块名
+			<version>0.0.1 - SNAPSHOT</version>	版本号
+
+依赖:
+	commons-fileupload.jar ---> commons-io.jar
+A中的某些类,需要使用B中的某些类,则成称为A依赖于B
+在maven项目中,如果要使用一个当时不存在的jar包或某块,则可通过依赖实现(去本地仓库,中央仓库实现)
+
+执行Mvn:
+	必须在pom.xml所在目录执行
+常用执行命令:
+	mvn compile:编译命令 :将HelloWorldTest.java 编译
+		只编译main目录中的文件
+		第一次执行时,会下载maven的基础组件
+		若缺少jar包,会现在本地仓库寻找,不存在则向中央仓库寻找
+	mvn test:执行 测试
+		首次测试会下载测试的基础环境包
+	mvn package:	首次测试会下载测试的基础环境包
+		jar/war	需先通过测试,才能打包
+	mvn install:
+		将开发的模块放入本地仓库,供其他模块使用
+		放入的位置由gav决定
+	mvn clean:
+		删除target目录(编译文件的目录)
+
+私服:
+	除了本地仓库,中央仓库外,还具有私服nexus
+	在公司范围以内,将jar包放入私服中,以防止每个人都建立一个本地仓库的资源浪费
+	因此作出修改:本地仓库 --- 私服仓库 --- 远程中央仓库
+依赖的范围(依赖的有效性):
+	compile test provided
+	默认为compile
+	
+	maven在编译,测试,运行项目时,各自使用一套classpath
+	compile:编译,测试,运行 时都可以拿到A.jar
+	test:仅测试
+	provided:编译 测试
+		
+在eclpise中创建maven工程
+1.配置maven
+	配置maven  window-preferences--maven--installations
+		使用自己下载的maven
+	配置本地仓库	 window-preferences--maven--user settings
+	在eclipse中编写完依赖后,需要maven-update project
+	
+maven生命周期:
+	执行package操作会将compile test package全部执行
+	
+	生命周期包含的阶段:3个阶段
+	clean lifecycle		清理
+			pre-clean 	pst-clean
+	default lifecycle	默认(常用)
+			test-compile 编译测试源代码
+	site lifecycle		站点
+			pre-site	site 	post-site	site-deploy
+
+eclipse --依赖
+	依赖排除
+		A.jar ---B.jar
+	当我们通过maven引入A.jar时,会自动引入B.jar
+		A.jar和B.jar的依赖本质如果是内部的A(z)和B(x)依赖
+		若不需要使用A(z),则不需要B.jar,则可以依赖排除
+	依赖 排除方法:
+		
+  <dependencies>
+  	 <!-- 对Junit 单元测试的Maven依赖 -->
+  	 <dependency>
+  	 	<groupId>junit</groupId>
+  	 	<artifactId>junit</artifactId>
+  	 	<version>4.0</version>
+  	 		<!-- 排除依赖 -->
+ 			<exclusions>
+ 				<exclusion>
+ 					<groupId></groupId>
+ 					<artifactId></artifactId>
+ 				</exclusion>
+ 			</exclusions>
+  	 	<scope>test</scope>
+  	 </dependency>
+  </dependencies>
+
+	依赖的传递性:
+		A---B---C
+		则可知A---C
+		在maven中要达成该目标,当且仅当B依赖于C的范围是compile	
+三.maven模块的使用
+	若所写的项目B依赖于项目A,则需要将A项目install到本地仓库
+	在HelloWord示例中,HelloWord和HelloWordTime中都存在junit.jar
+	若需要在HelloWordTime中不导包也可以使用单元测试,那么需要在HelloWord中将junit.jar设置为compile
+依赖原则:
+	a.遵行路径最短原则(依赖项目---依赖仓库)
+	b.路径长度相同:(严禁使用本情况)
+		在同一个pom文件中有两个相同的jar但是版本号不同
+		满足覆盖原则,后面声明的依赖会覆盖前面声明的依赖
+		一班严禁在同一个pom中声明两个相同的依赖
+	c.不同的pom文件中存在两个相同的jar但是版本不同
+		项目A依赖于项目B,C
+		项目B中存在x.2.0.jar
+		项目C中存在X.2.1.jar
+		则先声明的依赖会覆盖后声明的依赖
+	d.虚拟机只能够识别sources flode 中的源代码
+统一项目的JDK:
+	bulid path:删除旧版本,增加新版本
+	mvaev-preferencrs
+	也可以通过pimwenjian 依赖
+<profiles>     
+      <profile>       
+           <id>jdk-1.6</id>       
+           <activation>       
+               <activeByDefault>true</activeByDefault>       
+               <jdk>1.6</jdk>       
+           </activation>       
+           <properties>       
+               <maven.compiler.source>1.6</maven.compiler.source>       
+               <maven.compiler.target>1.6</maven.compiler.target>       
+               <maven.compiler.compilerVersion>1.6</maven.compiler.compilerVersion>       
+           </properties>       
+   </profile>      
+</profiles>    
+
+动态修改依赖版本号:
+ <properties> 
+	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding> 
+	<!-- 统一版本号 -->
+	<sky.word.junit.version>4.0</sky.word.junit.version>
+  </properties>
+
+	<version>${sky.word.junit.version}</version>
+
+四.maven继承的实现
+	只要A继承于B,则A继承所有B的依赖,A可以使用B的所有依赖
+继承实现步骤
+	1.建立父工程,打包方式为pom(一般不写代码,只做依赖)
+	2.在父工程的pom文件dependencyManagement中写依赖
+<!-- 父工程的依赖:需要写在:
+  dependencyManagement中
+   -->
+   <dependencyManagement>
+   	<dependencies>
+   		<dependency>
+   			<groupId>junit</groupId>
+	  	 	<artifactId>junit</artifactId>
+	  	 	<version>${sky.word.junit.version}</version>
+	  	 	<scope>compile</scope>
+   		</dependency>
+   	</dependencies>
+   </dependencyManagement>
+
+	3.在子类总需要声明需要使用哪些父类的依赖
+ <!--  <groupId>com.sky.maven</groupId> -->
+  <artifactId>HelloWorld</artifactId>	<!--继承只需要写模块名  -->
+ <!--  <version>0.0.1-SNAPSHOT</version> -->
+  <!-- 给当前工程一个父工程 
+  1.加入父工程的坐标gav
+  2.当前pom和父工程的pom文件的相对路径
+  -->
+  <parent>
+  	<!-- 1.加入父工程的坐标gav -->
+  	  <groupId>com.sky.maven</groupId>
+	  <artifactId>Hello</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>
+	 <!-- 2.当前pom和父工程的pom文件的相对路径-->
+	 <relativePath>../Hello/pom.xml</relativePath>
+  </parent>
+  	<!-- 声明需要使用父类哪些依赖 -->
+  <dependencies>
+  		<dependency>
+   			<groupId>junit</groupId>
+	  	 	<artifactId>junit</artifactId>
+   		</dependency>
+  </dependencies>
+
+继承可以方便版本的管理,统一版本号
+五.maven 聚合
+	前置工程的install可以交由聚合完后
+	
+	聚合的使用:在一个总工程中使用
+	聚合的配置只能配置在pom方式的maven工程中
+
+   <!-- 配置聚合,避免前置工程的install操作 -->
+  		  
+ <!-- 聚合 -->
+ <modules>
+ 	<module>../HelloWorld</module>
+ 	<module>../HelloWordTime</module>
+ </modules>
+  </modules>
+
+可以将拆分的项目组合起来
+
+六.部署web工程
+	需要增加servlet runtime libraray
+通过mavev直接运行部署web
+	deploy命令 部署
+
+实际开发中,发发人员将自己的项目开发完毕后 打成war包,交由实施人员去部署
+
+[ERROR] No compiler is provided in this environment. Perhaps you are running on a JRE rather than a JDK?
+
+编辑注册表中相关的配置项，来解决这个问题。配置如下所示：
+在这个路径 C:\Program Files\Java\jdk1.8.0_161\jre\lib\amd64 才有相关的配置，修改一下配置，如下所示:

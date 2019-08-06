@@ -1,0 +1,14 @@
+-----------------------------293582696224464
+Content-Disposition: form-data; name="file"; filename="??????.doc"
+Content-Type: application/msword
+
+13515156184526
+
+-----------------------------293582696224464--
+
+以上空格也是
+
+需要设置数据边界,显示的指定
+Connection: keep-alive
+Charset:utf-8
+Content-Type: multipart/form-data; boundary=---------------------------293582696224464

@@ -1,0 +1,60 @@
+1.www是环球信息网的缩写,中文名称为万维网
+2.网页<号为转义符&lt;	不加;号也可以识别,但是不符合规范化编程要求
+3.有序列表和无序列表可以相互嵌套	
+	<ul>
+		<li>无序</li>
+		<li>
+			<ol>
+				<li>无序之中的有序</li>
+				<li>无序之中的有序</li>
+				<li>无序之中的有序</li>
+				<li>无序之中的有序</li>
+			</ol>
+		</li>
+	</ul>
+4.指定嵌套列表时,也可以指定项目符号(无序的li)或编号样式(有序的li)`子类可以嵌套父类的属性
+	<ul type="circle">
+		<li type="disc">无序1</li>
+		<li >无序2</li>
+		<li>
+			<ol type="i">
+				<li type="1">无序之中的有序</li>
+				<li>无序之中的有序</li>
+				<li>无序之中的有序</li>
+				<li>无序之中的有序</li>
+			</ol>
+		</li>
+	</ul>
+5.在创建列表时,li的结束标签可以省略	语法上必须补全,不写不符合规范化编程要求
+6.换行符为<br/>	<hr/>为实线分隔符,也成为标识线	width可以设置水平宽度	size会设置高度,会发现是空心的实体框	color可以设置颜色
+7.在html标签中不给属性加"",编译器不会报错,但是解析时会造成混乱
+8.<strong><strong/>加粗			
+	A.<sup>上标</sup><br/>		无法使用全称super
+	B.<s>删除线</s><br/>
+	C.<strike>删除线</strike><br/>
+	D.<em></em>倾斜字体
+	E.<span style="text-decoration: underline">下划线</span>
+9.<img src="图片地址" title="鼠标悬浮时的提示文字" alt="当图片不存在加载失败时的替代文字">
+10.table标签		
+		<!-- table border="1px"	边框一像素 	
+		 width="100px"	单元格宽度
+		 style="border:1px solid red"	css的border书写格式,可以写像素	实线		红色
+		 cellpadding="100px"	单元格文字与边框的距离
+		 cellspacing="100px"	边框与外边框的边距-->
+		<table border="1px" width="100px" >
+			<tr>
+				<td>111</td>
+				<td>222</td>
+			</tr>
+			<tr>
+				<td>444</td>
+				<td>555</td>
+			</tr>
+		</table>
+11.a标签
+	默认提交方式为get	会显示提交的数据		
+12.form
+	action	post	不会显示提交的数据	 
+	get不安全,post相对安全
+	
+	

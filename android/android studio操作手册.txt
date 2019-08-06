@@ -1,0 +1,56 @@
+一.绪论及环境搭建
+	什么是Android:Google开发的基于Linux的开源操作系统
+	应用领域:智能手机,平板电脑,电视,车载,穿戴
+
+	环境配置:JDK Android Studio (developers.google.cn	www.android-studio.org) SDK
+二.创建项目的运行位置
+	对于每一个成功创建的Android项目.
+	主要操作的是app文件夹下的src.mian 其余的是单元测试模块
+	main.res.layout	初始化模块文件(Android模板)
+三.View 的概念
+	Android应用的绝大部分UI组件都放在Android.widget包和Android.view包中
+	Android推荐使用xml布局文件来定义用户界面,英雌所有组件都提供了两种方式来控制组件的行为:
+		在XML布局文件中通过xml属性进行控制
+		在java程序代码中通过调用方法进行控制
+	实际上不管使用哪种方式,他们控制Android用户界面行为的本质是一样的.大部分时候,控制UI组件的xml属性还有对应的方法.
+	当xml无法实现复杂的行为时,则可以使用java语言来控制行为,个别事件用程序来控制
+四.View类常用的xml属性 相关方法及简要说明
+	https://blog.csdn.net/u010120090/article/details/49250247
+
+组件的宽高单位:
+	px:像素,在屏幕中可以显示的最小元素单元,使用px来设置控件的大小,在分辨率不同的手机上控件显示的效果也不一样
+	pt:磅数,一般作为字体的单位来显示,和px类似
+	dp:密度无关像素,又称dip(dip可以为小数值),好处是无论屏幕的分辨率如何总能显示相同的大小,一般使用dp作为控件与布局的宽高单位
+	sp:代表可伸缩像素,设置字体大小时使用
+
+android:layout_height.android_layout_width:指定组件的高度和宽度
+	fill_parent:与其父容器的高度和快递一致
+	wrap_content:恰好可以包裹住内容,随内容的长度而变化
+	match_parent:与fill_parent一样,但是Android2.2之后推荐该元素代替
+创建和使用布局:
+	利用模板建立的项目会自动在layout文件夹下生成xml文件,是app运行的配置文件
+	线性布局:常见的布局方式,可以作为布局文件的根标签,要求水平优先
+	相对布局:相对其他位置对其进行布局
+	表格布局:让控件以表格的形式来排列控件,只要将控件放在单元格中就可以整齐排列,不到万不得已不使用
+	网格布局:适用于计算器这样的布局
+	针布局:
+	绝对布局:指定x,y坐标来控制每一个控件的位置,左上角为(0,0)
+	流式布局:接近于线性布局
+	常用布局;x线性布局 相对布局...
+组件:
+	TextView	文本框	是EditText(输入框)Button两个UI组件的父类
+	
+	
+使用资源:
+	在java代码中使用资源
+	在java中访问资源主要通过R类来完成,SDK在编译应用时在R类中为/res文件夹下所有资创建索引项.
+	package_name.R.resource_type.resource_name
+	AdapterView及其子类:继承了ViewGroup,本质是容器
+		包括多个列表项
+	ListView:以垂直列表的形式显示所有的列表项
+
+	ListActivity:
+
+	
+
+

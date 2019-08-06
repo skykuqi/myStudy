@@ -1,0 +1,8 @@
+一.查看端口号
+show global variables like 'port';
+二.查看字符集
+show character set;
+三.设置字符集;
+alter datavase 'yourDatabaseName' character set 'characterName';
+四.查看该数据库使用的字符集
+select @@character_set_database,@@collation_database;

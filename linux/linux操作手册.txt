@@ -1,0 +1,160 @@
+一.linux常见发行版本:
+	Ubuntu	REdHat	centos	Debain	Fedora,SUSE,	OpenSUSE
+	软件开发常用:	centos6.x/7.x
+	在虚拟机上安装centos
+二.虚拟机(VmWare-12)上安装linux(centos6.x)
+centos:CentOS-6.8-x86 64-bin-DVD1.iso
+1.VmWare-12安装	
+2.centos6.x安装
+三.在VmWare中添加linux系统
+	网络类型:
+		桥接网络;配置和主机保持一致
+		网络地址转换器(NAT):独立于主机
+	大小:20G 单个
+	
+点击编辑虚拟机设置
+	选择CD/DVD,使用ISO镜像	
+	如果开启时报错:VT-X处于禁用状态,原因是真实物理机没有开启虚拟化
+	解决:进入Biles界面,INtel virtual Tecchnology Enable
+关于VnWare中主机名:CentOS 64代表虚拟机的名字
+	主机名为网络通信的名字
+设置密码,超级管理员的账号密码	root 密码自己设置	
+
+自定义设置:挂载点:/boot	200Mb	系统启动是需要的内存
+	/:系统的可用磁盘大小 10240M
+	swap:交换内存,大小和内存一样大	2048MB
+还需要创建普通用户
+	敏感操作需要使用超级管理员,因此不必要普通用户
+
+四.虚拟机网络设置
+	可以搭建多台计算机:设置局域网:	192.168.2.x	子网192.168.2.0
+	需要修改子网以及DHCP设置	NAT设置	网关一般设置为192.168.2.1
+	还需要点击更改设置
+
+
+五.window访问虚拟机的网络配置
+	VMnet8双击属性 协议版本4
+	默认网关也设置为192.168.2.1	IP:192.168.2.2	
+
+六.配置centos网卡
+	vi /etc/sysconfig/network-scripts/ifcfg-eth0
+0
+ONBOOT=yes
+
+NM_CONTROLLED=yes
+
+BOOTPROTO=static
+
+IPADDR=192.168.2.128
+
+GATEWAY=192.168.2.1
+
+BROADCAST=192.168.2.255
+ 
+DNS1=114.114.114.114	如果域名无法解析,可以加入DNS设置
+DNS2=8.8.8.8	
+如果使用 shift +zz无法保存使用:wq!强制保存
+
+七.通过网络名访问虚拟机	192.168.2.128	centos-64
+vi /etc/hosts	追加	192.168.2.128	centos-64
+
+	windows:C:\Windows\System32\drivers\etc
+	192.168.2.128	centos-64
+
+七.开启网络服务
+	service NetworkManager stop	
+	
+/etc/init.d/network restart
+	
+chkconfig NetworkManager off	关闭开机自启
+	
+vi /etc/resolv.conf	
+添加：nameserver 192.168.2.1
+	
+service network restart	重启网卡
+九.防火墙 关闭
+	
+service iptables stop	关闭防火墙
+	
+chkconfig	iptables	off	下次开启禁用	
+	
+service iptables status	检查防火墙是否运行
+windows:关闭防火墙
+	
+yum -y install ntp ntpdate	安装同步时间插件
+	
+ntpdate cn.pool.ntp.org
+	
+hwclock --systohc		同步时间
+
+
+八.在真实机的cmd命令窗口访问centos
+	需要安装插件:SecureCRT 操作cetos
+九.通过secureCRT 对centos进行文件的上传下载
+	下载插件 yum -y intall lrzsz
+	可以直接上传文件	
+	cd /tmp	直接将文件拖拽到命令窗口选择最后一个 z..
+
+十.下载安装JDK(rpm方式)
+	linux的压缩包 .tat.gz
+	exe : rpm
+	下载JDK8.rmp	
+
+
+
+十一.配置环境变量
+	vi /etc/profile
+	进入编辑模式 在最末端加上JDK的环境变量
+export JAVA_HOME=/usr/java/jdk1.8.0_65
+export CLASPATH=$JAVA_HOME$\lib:$CLASSPATH
+export PATH=$JAVA_HOME$\bin:$PATH
+
+	source /etc/profile	刷新,让环境变量立刻生效
+测试 java -version
+
+十二.集群
+	完全克隆三台虚拟机
+主从:设置从计算机的内存大小为1G
+	a.将从计算机的内存适当降低
+	b.网络ip地址需要修改	计算机Ip UUID	即唯一性的东西需要进行修改
+	ip: vi /etc/sysconfig/network-scripts/ifcfg-eth0	同时删除UUID以及硬件位置
+	计算机名称: vi /etc/sysconfig/network
+	/etc/udev/rules.d/70-persistent-net.rules 会保存配置的唯一性干扰配置
+	rm -f /etc/udev/rules.d/70-persistent-net.rules 删除该文件
+	修改id与域名的映射:	vi /etc/hosts
+	192.168.2.129	ecntos-64-2....
+
+十三.SSH免秘钥登录
+	centos-64	centos-64-2	centos-64-3
+需要主从通讯	计算机一想要调用计算机二中的应用,无法直接同步,想要访问计算机需要输入密码
+配置ssh -key可以免秘钥登录	可以跳过操作系统的秘钥检查
+私钥:	将秘钥留在本机
+公钥:	将秘钥发给其他计算机
+centos-64 生成秘钥:ssh-keygen -t rsa	
+	秘钥位置	cd /root/	cd .ssh/	ll
+	-rw-------. 1 root root 1675 4月  15 21:53 id_rsa	私钥
+	-rw-r--r--. 1 root root  396 4月  15 21:53 id_rsa.pub	公钥
+发送私钥与公钥
+	发送私钥:本机	ssk-copy-id localhost	需要输入本用户的用户密码
+	发送公钥:	ssk-copy-id centos-64-2
+测试免秘钥登录:ssh locahost	ssh centos-64-2
+
+十四.集群搭建的用户问题
+	都是超级管理员登录的,拥有所有权限,但是权限过高 可能存在风险
+	a.创建用户组:groupadd study
+	b.在用户组之中增加用户:useradd -g study01	
+	c.密码:passwd study01
+		
+	则完成对普通用户的增加
+	d.给用户提升权限:本质是修改一个文件	/etc/sudoers
+		因为文件本省只读所以修改该文件前需要修改将只读禁止
+		chmod 777 /etc/sudoers  最高权限可读可写
+		追加	study01 ALL=(ALL)	ALL
+		还原权限:	shmod 440 /etc/sudoers
+	
+	e.删除用户:userdel syudy01
+	f.切换用户 su study01	如果提示无法删除那么则需要重启后删除
+十五.linux 进程
+	jps	可以查看进程
+	kill -9 xxxx 根据进程端口名关闭进程
+

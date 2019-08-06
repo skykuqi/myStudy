@@ -1,0 +1,172 @@
+一.Swing特点的介绍 Swing包的层级结构和继承关系
+	java.lang.Object - java.awt.Component - java,awt.Container - javax.swing.JComponent
+	在Swing中大多数GUI组件都是Component类的直接子类或间接子类,JComponent类是SWING组件各种特性的存放位置,这些组件的特性包括设定组件边界,GUI组件自动滚动等.
+	SWING中最重要的父类是Container类,而Container类中有两个最重要的子类,分别为Window,Frame
+二.常用Swing组件概述
+JButton: 代表Swing按钮,按钮可以带一些图片或者文字
+JCheckBox: 复选框
+JComBox: 下拉框,可以在下拉显示区域显示多个选项
+Jframe: 框架类
+JDialog:对话框
+JLabel:标签组件
+JRadioButton:单选按钮
+JList:能够在用户界面显示一系列题目的组件
+JTextField:文本框
+JPasswordField:密码框
+JTextArea:文本区域
+JOptionPane:对话框
+三.Jframe窗体
+	可以看做组件的容器
+public class DemoFrame extends JFrame{
+    private void createFrame(){
+        //给窗体增加title标题
+        this.setTitle("这是一个测试窗体");
+        //设置窗体的大小
+        this.setSize(1000, 600);
+        //设置窗体可见
+        this.setVisible(true);
+        JLabel jLabel = new JLabel("这是一个JFrame窗体");
+        //是便签上的文字居中
+        jLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        //设置窗体关闭方式
+        //DO_NOTHING_ON_CLOSE 什么都不做就将窗体关闭
+        //DISPOSE_ON_CLOSE 任何注册监听程序对象后会自动隐藏并释放窗体
+        //HIDE_ON_CLOSE 隐藏窗体的默认关闭方式
+        //EXIT_ON_CLOSE 退出应用程序默认窗体关闭
+        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        //使窗体转化为容器
+        Container contentPane = this.getContentPane();
+
+        //将标签放入容器当中
+        contentPane.add(jLabel);
+
+    }
+四.JDialog窗体
+	功能:在一个窗体中弹出另一个窗体	
+	//添加按钮弹出对话框
+        JButton jButton = new JButton("弹出对话框");
+        jButton.setBounds(10, 10, 100, 21);
+        //设置按钮的监听事件
+        jButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MyJDialog myJDialog = new MyJDialog(DemoFrame.this, "弹出JDialog,对话框");
+                myJDialog.setVisible(true);
+            }
+        });
+        contentPane.add(jButton);
+
+/**
+     * 建一个指定了父窗体,标题的对话框
+     *
+     * @param owner 父窗体
+     * @param title 标题
+     */
+    public MyJDialog(Frame owner, String title) {
+        super(owner, title);
+        Container contentPane = getContentPane();
+        JLabel jLabel = new JLabel("这是一个JDialog对话框");
+        jLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        contentPane.add(jLabel);
+        setBounds(300,100,200,200);
+    }
+五.标签组件与图标
+a.图标
+class MyIcon implements Icon{   //实现icon接口
+    //设置图标的宽
+    private int width;
+    //设置图标的高
+    private int heght;
+
+    public MyIcon(int width, int heght) {
+        this.width = width;
+        this.heght = heght;
+    }
+
+    @Override
+    public void paintIcon(Component c, Graphics g, int x, int y) {
+        g.fillOval(x,y,width,heght);        //绘制一个圆形
+    }
+
+    @Override
+    public int getIconWidth() {
+        return 0;
+    }
+
+    @Override
+    public int getIconHeight() {
+        return 0;
+    }
+}
+b.标签组件
+ class MyJLaber extends JLabel{
+    /**
+     * 一个带文字,图标的JLabel对象,设置水平对齐方式
+     * @param text  文本
+     * @param icon 图标
+     * @param horizontalAlignment 水平对齐方式
+     */
+    public MyJLaber(String text, Icon icon, int horizontalAlignment) {
+        super(text, icon, horizontalAlignment);
+    }
+
+    /**
+     * 一个带文字的JLabel对象,设置水平对齐方式
+     * @param text  文本
+     * @param horizontalAlignment 水平对齐方式
+     */
+    public MyJLaber(String text, int horizontalAlignment) {
+        super(text, horizontalAlignment);
+    }
+
+    /**
+     * 创建一个带图标的JLabel对象,设置水平对齐方式
+     * @param image 图标
+     * @param horizontalAlignment   水平对齐方式
+     */
+    public MyJLaber(Icon image, int horizontalAlignment) {
+        super(image, horizontalAlignment);
+    }
+
+    /**
+     * 创建一个带图标的JLabel对象
+     * @param image 图标
+     */
+    public MyJLaber(Icon image) {
+        super(image);
+    }
+
+    /**
+     * 创建一个不带图标和文本的JLabel对象
+     */
+    public MyJLaber() {
+        super();
+    }
+}
+
+六.常用布局管理器
+a. 绝对布局
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

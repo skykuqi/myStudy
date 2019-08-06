@@ -1,0 +1,55 @@
+<dependencies>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.1.0</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+<build>
+		<finalName>MyWeb</finalName>
+		<plugins>
+			<plugin>
+				<!--启动 web工程所依赖的ervlet容器(Tomcat)容器 -->
+				<groupId>org.codehaus.cargo</groupId>
+				<artifactId>cargo-maven2-plugin</artifactId>
+				<version>1.4.9</version>
+				<configuration>
+					<container>
+						<containerId>tomcat8-5-39</containerId>
+						<home>F:\apache-tomcat-8.5.39</home>
+					</container>
+					<configuration>
+						<!-- 校验第一次配置是否成功正确 -->
+						<type>existing</type>
+						<home>F:\apache-tomcat-8.5.39</home>
+						<properties>
+							<!-- 更改监听端口 -->
+							<cargo.servlet.port>8080</cargo.servlet.port>
+						</properties>
+					</configuration>
+				</configuration>
+				<executions>
+					<execution>
+						<id>cargo-run</id>
+						<!-- 阶段 -->
+						<phase>install</phase>
+						<goals>
+							<!-- 执行 -->
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+
+	</build>

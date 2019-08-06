@@ -1,0 +1,623 @@
+Spring 2003,	两大特性:IOC Aop
+Spring data,spring boot,spring cloud,spring framework,spring social
+
+
+
+IOC:控制反转	(DI:依赖注入)
+
+一.搭建Spring环境
+下载jar
+http://repo.spring.io/libs-release-local/org/springframework/spring
+现在需要使用的:(5+1)日志文件
+spring-aop-4.3.9.RELEASE.jar		开发aop特性所需要的jar
+spring-beans-4.3.9.RELEASE.jar		处理beans的jar
+spring-context-4.3.9.RELEASE.jar	处理spring上下文的jar
+spring-core-4.3.9.RELEASE.jar		核心jar
+spring-expression-4.3.9.RELEASE.jar	spring表达式	
+三方提供的日志
+commons.-logging.jar
+
+二.编写配置文件
+为了编写时有一些提示,自动生成一些配置信息,可以给eclpise增加支持spring的插件
+有spring官方提供,spring tool suite
+地址:http://spring.io/tools/sts/all	下载该插件
+在eclpise中安装	help-install
+
+方式二:直接下载sts工具(相当于eclpise,集成sts)
+
+新建:bean configuratin -applicationContext.xml
+
+三.正式开发spring程序
+IOC:spring有一个IOC容易,每一个bean都在内部放了一个对象,对象类型由class决定
+	id值唯一确定该bean
+	功能:创建对象	给对象赋值
+获取该对象
+<!-- 该文件产生的所有对象,被spring放入一个 称之为spring IOC容器的地方 -->
+	<bean id="student" class="com.sky.model.Student">
+		<property name="stuNo" value="2"></property>
+		<property name="stuName" value="ls"></property>
+		<property name="stuAge" value="24"></property>
+	</bean>
+
+	/**
+	 * 1.省略了new 
+	 * 2.不需要再内部赋值
+	 */
+	public static void testByIOC() {
+		/*加载配置文件*/
+		@SuppressWarnings("resource")
+		ApplicationContext context =new ClassPathXmlApplicationContext("applicationContext.xml");
+		/*直接透过spring IOC容器获取对象*/
+		Student stu = (Student)context.getBean("student");
+		System.out.println(stu);
+	}
+比较:
+a.传统方法创建对象非常离散,造成后期维护比较麻烦	例:student类存在学习方法,学习方法存在于接口study中,
+			每个不同的学习,例如学习java,学习html需要不同的实现类,然后在student类中实例化他们
+b.可使用工厂模式,将所有的创建new放入工厂中,将对象管理几种在一起
+			将java学习,html学习者两个实现类的实例化放入工厂对象courseFactory中,
+			方便对于对象实例化的管理,集中管理
+			弊端:
+			需要写工厂类,实现类,实现方法
+c.spring IOC可理解为一个超级工厂,可以放任何对象(容纳任何对象,course,student,....)
+			IOC的优势:控制反转:
+				反转的是获取对象的方式,由手动new到直接getBean(创造---拿)
+为了更加清晰的理解IOC,在一次spring大会上更名为DI,依赖注入
+			将属性值注入给了属性,又将属性注入给了bean,又将bean注入给了IOC容器
+spring IOC容器帮助我们new了对象,并且给对象附了值
+总结:需要什么对象都可以直接去springIOC容器中获取
+IOC分为两步:
+	1.先给spring中存放对象并赋值
+	2.不使用传统的factory,直接从IOC容器中获取(拿)
+DI:
+	Teacher 
+	Course: name teachers
+IOC容器赋值:
+	1.如果是简单类型(8个基本类型+String) 用value赋值
+	2.如果是对象类型	用ref赋值 ref=其他需要引用的bean的id值
+	<bean id="teacher" class="com.sky.model.Teacher">
+		<property name="age" value="20"/>
+		<property name="name" value="老王"/>
+	</bean>
+	<bean id="coures" class="com.sky.model.Course">
+		<property name="id" value="1"/>
+		<property name="courseName" value="java基础"/>
+		<property name="courseHour" value="15"/>
+		<property name="teacher" ref="teacher"/>
+	</bean>
+	实现对象与对象之间的依赖关系(依赖注入)
+
+a.赋值默认使用的是set方法,底层通过反射实行
+b.也可以通过构造器注入,通过构造器赋值
+		<!-- 通过构造器赋值,顺序和构造器一致
+			否则需要指定 index=0 开始指定位置
+			name = "属性名"
+			当类型不一致时可以使用类型来指定
+		 -->
+		<constructor-arg value="2" index="0" name="id" type="int"></constructor-arg>
+		<constructor-arg value="Html教程"></constructor-arg>
+		<constructor-arg value="18" ></constructor-arg>
+		<constructor-arg ref="teacher" ></constructor-arg>
+c.通过P命名空间去赋值
+	<bean id="course" class="com.sky.model.Course" p:id="3" p:courseName="大数据" p:courseHour="15" p:teacher-ref="teacher">
+需要首先在namespace中加入p
+无关顺序,可以根据名字选择出来	多个P赋值之间要留空格
+构造方法存在歧义需要指定类型:int String="12" 	无法正确辨认,则默认为字符串数据
+
+实例:注入各种集合类型的数据类型
+	<bean id="allCollection" class="com.sky.model.AllCollection">
+		<property name="list">
+			<list>
+				<value>a</value>
+				<value>b</value>
+				<value>c</value>
+			</list>
+		</property>
+		<property name="array">
+			<array>
+				<value>aa</value>
+				<value>bb</value>
+				<value>cc</value>
+			</array>
+		</property>
+		<property name="set">
+			<set>
+				<value>aaa</value>
+				<value>bbb</value>
+				<value>ccc</value>
+			</set>
+		</property>
+		<property name="map">
+			<map>
+				<entry>
+					<key>
+						<value>a:</value>
+					</key>
+					<value>aaaa</value>
+				</entry>
+				<entry>
+					<key>
+						<value>b:</value>
+					</key>
+					<value>bbbb</value>
+				</entry>
+				<entry>
+					<key>
+						<value>c:</value>
+					</key>
+					<value>cccc</value>
+				</entry>
+			</map>
+		</property>
+		<property name="properties">
+			<props>
+				<prop key="a:">aaaaa</prop>
+				<prop key="b:">bbbbb</prop>
+				<prop key="c:">ccccc</prop>
+			</props>
+		</property>
+	</bean>
+
+混合使用也需要遵循该规范
+
+四.特殊值的注入问题以及各种类型的自动配置
+value属性和<value>注入方式的区别
+1.value中的必须加双引号 <value>中不需要
+2.value可以通过type属性来指定数据类型,使用全类名数	<value>无
+3.参数包含特殊字符(<,&)时的处理方法:(value a.使用<![CDATA[ ]]>标记 b.使用xml预定义的实体引用)
+		<value> 使用xml预定义的实体引用
+xml中预定义的实体引用:
+	&gt;			>
+	&lt;			<
+	&amp;			&
+	&asop			'
+	&quot			"
+空值的处理
+	使用标签<null/>赋值为null时不需要<value>标签
+4.自动装配 约定优于配置	只适用于ref引用类型
+	<!-- 自动装配
+		course类中有一个ref属性teacher,并且该IOC容器中恰好有一个bean的id也是teacher
+		id值和teacher属性的属性名必须一致,才能自动装配
+	 -->
+	<bean id="course" class="com.sky.model.Course" autowire="byName">
+
+	autowire="byName" 本质是byId
+	autowire="byType" 其他bean的类型是否与该course类的ref属性一致,如果存在两个teacher
+				都满足其所需要的属性类型,则会发生报错.
+	autowire="constructor" 根据构造器来构造,寻找其他bean的类型是否与该类的构造方法的参数类型一致
+				如果构造方法存在多个参数,且有简单类型那么无法成功
+5.设置全局自动转配
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 	http://www.springframework.org/schema/beans/spring-beans.xsd"
+	default-autowire="byName">	全局属性,所有bean都根据name(id)来自动装配
+	需要注意,子标签可以覆盖全局属性
+	自动装配虽然可以减少代码量,但是会降低代码的可读性,需要谨慎使用
+
+五.通过注解定义bean:通过注解的形式,将bean以及相应的属性值放入IOC容器
+	<!-- 配置扫描器 需要在namespace中加入context 
+	base-package="com.sky.dao,...."  以这样的形式加入多个包
+	-->
+	<context:component-scan base-package="com.sky.dao"/>
+	扫描流程:spring在启动时,会根据扫描的base-package在该包中会扫描是否有
+	@Component("studentDao")注解,如果有,则将该类加入IOC容器
+	
+注解类型:
+	@Component:较为宽泛,可以指定所有的类型
+	@Repository:Dao层,实现层
+	@Service:Service层
+	@Controller:控制层注解
+六:使用注解实现事务 (声明式事务)
+	目标:通过事务使以下方法要么全成功,要么全失败
+	public void addStudent(){
+		//增加班级
+		//增加学生
+		//crud
+	}
+
+a.jar包:spring-tx-4.3.9.RELEASE.jar	mysql-connector-java-8.0.11.jar(jdbc.jar)
+	commons-dbcp.jar 连接池使用的数据源	commons-pool.jar 连接池
+	spring-jdbc-4.3.9.RELEASE.jar
+	aopalliance.jar	
+b.在namespace中增加事务相关
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+c.配置
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+		<property name="driverClassName" value="com.mysql.cj.jdbc.Driver" ></property>
+		<property name="url" value="jdbc:mysql://localhost:3306/mydemo?useSSL=false" ></property>
+		<property name="username" value="root" ></property>
+		<property name="password" value="Mysql_123"></property>
+		<!-- 最大活动时间 -->
+		<property name="maxConnLifetimeMillis"	value="10" ></property>
+		<!-- 最大空闲时间 -->
+		<property name="maxIdle" value="6" ></property>
+	</bean>
+	<!-- 配置事务管理器txManager -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<!-- 增加对事务的支持 -->
+	<tx:annotation-driven transaction-manager="txManager"/>
+d.使用
+	在需要成为事务的方法前增加注解:
+	/*readOnly=false	非只读,可以增删改
+	 * propagation=Propagation.REQUIRED		如果当前存在事务，则加入该事务，如果当前不存在事务					，则创建一个新的事务。
+	 * */
+	@Transactional(readOnly=false,propagation=Propagation.REQUIRED) 
+七.AOP:面向方面编程
+	类A:a1() b1() x() xx() add()
+	类B:a2() b2() x() xx() add()
+	类C:a3() b3() x() xx() add()
+	避免代码的重复可以将x(),xx()放入x类中	
+	X类:x() xx()
+	类A:a1() b1() X类 add()
+	类B:a2() b2() X类 add()
+	类C:a3() b3() X类 add()
+	当x类的声明改变,需要在add()方法后执行,则需要修改每一个方法
+	
+	AOP:建立切入点:每次调用add()后(调动add()后的之歌点)自动执行x类
+		切面:将x()方法切入到add()方法之后
+		通知:到底是在add()执行前还是后
+			前置通知before activity:add()执行前通知
+			后置通知after returning advice:add()执行后通知
+			异常通知after throwing advice:add()方法抛出异常时插入通知
+			最终通知after finallyadvice:add()方法完毕时插入通知,无论是正常返回还是异常退出
+			环绕通知around advice:可以贯彻切入点add()方法执行的整个过程
+
+	一个普通类 --> 有特定功能的类
+				继承一个类或者实现接口,加注解(测试类junit),配置
+	把普通类变为通知:
+	a.实现一个接口:
+		前置通知:MethodBeforeAdvice
+		后置通知:AfterReturningAdvicd
+		异常通知:ThrowAdvice
+		环绕通知:MethodInterceptor
+		前置通知步骤:
+			a.安装jar包 aoplliance.jar aspectjweaver.jar	
+			b.配置	通过配置将其关联
+			c.编写
+				每当执行add()之前,自动执行的方法log();
+					add():业务方法
+					log():自动执行的通知,即AOP前置通知	
+			public class LogBefore implements MethodBeforeAdvice{
+			/**
+			 * 前置通知的具体内容
+			 */
+			@Override
+			public void before(Method method, Object[] args, Object target) throws Throwable {
+				System.out.println("前置通知....");
+				}
+			}
+	
+	<!-- 配置前置通知 -->
+	
+	<!-- 前置通知类
+		通知所在类:studentService
+	 -->
+	<bean id="logBefor" class="com.sky.aop.LogBefore"></bean>
+	
+	<!-- 将addStudent()方法和通知进行关联 -->
+	<aop:config>
+		<!-- 配置切入点,在哪里执行通知 -->
+		<aop:pointcut expression="execution(public void 		com.sky.service.impl.StudentServiceImpl.addStudent(com.sky.model.Student))" id="poioncut"/>
+		<!--aop:advisor 相当于连接切入点和和切面的线  -->
+		<aop:advisor advice-ref="logBefor" pointcut-ref="poioncut"/>
+	</aop:config>
+execution()表达内部写该方法名,方法名加全类名,内部参数也需要表名全类名
+	两个方法用execution() or execution()连接
+	public boolean addStudent(com.sky.model.Student):所有返回类型为Boolean并且返回参数为此的方法
+	public boolean com.sky.model.StudentService.addStudent(com.sky.model.Student):
+		只有该类下的addStudent方法
+	public * addStudent(com.sky.model.Student):返回值任意
+	public void * (com.sky.model.Student):方法名任意
+	public void addStudent(..) :任意参数列表
+	*com.sky.service.*.*(..):com.sky.service.StudentServic中的所有方法,不包含子包中的
+	*com.sky.service..*.*(..):com.sky.service.StudentServic中的所有方法,包含子包中的
+
+后置通知:
+
+	public class LogAfter implements AfterReturningAdvice{
+
+
+	@Override
+	public void afterReturning(Object returnValue, Method method, Object[] args, Object target) throws 		Throwable {
+		System.out.println("后置通知,目标对象:" + target +
+				" 方法名:" + method + " 方法参数: " + Arrays.toString(args) +
+				" 方法的返回值:" + returnValue);
+	}
+
+异常通知:
+	根据异常通知接口ThrowsAdvice的实现类,异常通知必须实现编写以下方法:
+	void afterThrowing([Method, args, target], Throwable subclass)即
+	void afterThrowing(Method, args, target, Throwable subclass) 或
+	void afterThrowing(Throwable subclass)
+环绕通知:
+	在方法的前后,异常发生时,最终等各个地方都可以进行的通知
+	本质,通过拦截器
+public class LogAround implements MethodInterceptor{
+	@Override
+	public Object invoke(MethodInvocation invocation) throws Throwable {
+		try {
+			System.out.println("这里是前置通知");
+			/* 所执行方法的返回值*/
+			Object result = invocation.proceed();	//控制着目标方法的执行	相当于addStudent()
+			System.out.println(result);
+			System.out.println("这里是后置通知,目标对象: " + invocation.getThis() + 
+					"方法名: " + invocation.getMethod().getName() + 
+					"方法的参数 : " + invocation.getArguments() +
+					"方法的返回值: " + result);
+			
+		}catch (Exception e) {
+			System.out.println("这里是异常通知,目标对象: " + invocation.getThis() + 
+					"方法名: " + invocation.getMethod().getName() + 
+					"方法的参数 : " + invocation.getArguments());
+		}
+		return null;
+	}
+}
+
+八.基于注解的AOP实现 
+	a.jar包的安装,同上
+	b.配置	@Component("logAnnotation")	//以注解形式加入IOC容器
+		@Aspect 
+		@Before("execution(public * addStudent(..))")//属性,定义切点
+		@AfterReturning("execution(public * addStudent(..))")//属性,定义切点
+		开启注解对aop的支持	<!-- 开启AOP对注解的支持 -->
+		<aop:aspectj-autoproxy/>
+
+		@Component("logAnnotation")	//以注解形式加入IOC容器	需要扫描器
+		@Aspect	//不需要扫描器 
+	c.编写
+/*注解形式实现通知*/
+@Aspect 
+public class LogBeforeByAnnotation {
+	
+	@Before("execution(public * addStudent(..))")//属性,定义切点
+	public void myBefore() {
+		System.out.println("这是基于注解形式的前置通知");
+	}
+}
+
+通过注解形式实现的AOP,如果想要获取目标对象的一些参数,则需要使用一个对象,JointPoint
+返回值的固定类型public void myAfter(JoinPoint jp,Object returningValue)
+	Object returningValue	,同时需要声明返回值
+
+	@AfterReturning(pointcut ="execution(public * com.sky.service.impl.*.addStudent(..))",
+			returning = "returningValue")//属性,定义切点
+	public void myAfter(JoinPoint jp,Object returningValue) {
+		//Object returningValue是返回值,但是需要告诉spring 
+	注解形式实现返回类型时:returningValue 返回的对象名必须是returningValue
+
+九.基于schema形式的AOP
+	通过配置实现将普通类转化为AOP,基于schema配置
+	类似与接口的实现方式
+	schema方式的通知
+		a.编写一个普通的类
+		b.将该类通过配置转化为通知
+通过注解和Schema实现的通知,返回方都用JoinPoint
+环绕通知会返回目标方法的返回值
+
+	<!-- 基于Schema将普通类转化为通知 -->
+	<bean id="logBySchema" class="com.sky.aop.LogBySchema"/>
+	<aop:config>
+		<aop:pointcut
+			expression="execution(public void com.sky.service.impl.StudentServiceImpl.*(..))"
+			id="pointBySchema" />
+		<aop:aspect ref="logBySchema">
+		<!-- 连接线:连接业务 addStudent 和 通知 -->
+			<aop:before method="before" pointcut-ref="pointBySchema"/>
+			<aop:after-returning method="afterReturning" pointcut-ref="pointBySchema" returning="returningValue"/>
+			<aop:after-throwing method="schemaException" throwing="e"  pointcut-ref="pointBySchema"/>
+			<aop:around method="schemaAround" pointcut-ref="pointBySchema"  />
+		</aop:aspect>
+	</aop:config>
+
+十.spring开发Web项目及拆分Spring配置文件
+	springIoc容器:
+		a.applicationContext.xml中配置的bean
+		b.@Controller/Service/Respository/Component
+	JAVA程序.springIOC容器初始化:将IOC容器中的所有bean实例化为对象
+	ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+			将各个bean依赖的属性值注入进去
+	javaWeb程序.spring容器的初始化:
+		在每一个servlet中都需要ApplicationContext context = new ClassPathXmlApplicationContext		("applicationContext.xml"),这便是弊端,问题所在,web程序没有统一的入口
+		
+	javaWeb程序.springIOC容器的初始化正确操作:
+		思路:当服务tomcat启动时,通过监听器将springIOC容器初始化一次
+		可以使用spring-web-4.3.9.RELEASE.jar来执行这个过程,该监听器已经将springIOC容器初始化一次
+		必要jar包:
+			commons-logging-1.1.1.jar
+			spring-aop-4.3.9.RELEASE.jar
+			spring-beans-4.3.9.RELEASE.jar
+			spring-context-4.3.9.RELEASE.jar
+			spring-core-4.3.9.RELEASE.jar
+			spring-expression-4.3.9.RELEASE.jar
+			spring-web-4.3.9.RELEASE.jar
+			还需要加入tomcat环境servlet-api
+		org.springframework.web.context.ContextLoader(监听器的父类)中
+		public static final String CONFIG_LOCATION_PARAM = "contextConfigLocation";
+		指定的IOC容器的位置	
+
+  <!-- 指定IOC容器的位置 -->
+  <context-param>
+  		<param-name>contextConfigLocation</param-name>
+  		<param-value>classpath:applicationContext.xml</param-value>
+  </context-param>
+  <listener>
+ 	<!-- 配置spring-web.jar提供的监听器,此监听器可以在服务器启动时初始化IOC容器
+ 		初始化IOC容器(applicationContext.xml) ,必须告诉监听器此容器的位置(存在默认值)
+ 		参数:context-param
+ 		默认的约定:将IOC容器的xml放入web-inf并且必须是这个名字
+ 	 -->
+  	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+
+十一.拆分spring配置文件
+	根据什么拆分:i.三层结构
+			UI(html,css,jsp.servlet) applicationContextController.xml
+			servre:applicationDao.xml
+			公共数据库:applicationDB.xml
+		ii.功能结构
+			学生相关配置 applicationContextStudent.xml <bean id="student" class = "com.sky
+			.model.student"/>
+			班级相关配置.....
+	如何加载多个applicationContext.xml
+	1.<!-- 指定IOC容器的位置 -->
+  <context-param>
+  		<param-name>contextConfigLocation</param-name>
+
+  		
+  					classpath:applicationContextController.xml,
+  					classpath:applicationContextDao.xml,
+  					classpath:applicationContextService.xml
+  		</param-value>
+  </context-param>
+
+	2.使用通配符的形式
+		<param-name>contextConfigLocation</param-name>
+  		<param-value>classpath:applicationContext.xml,
+  					classpath:applicationContext*.xml
+  		</param-value>
+	3.在主配置文件中配置(也可以使用*通配符)
+	<import resource="applicationContextController.xml"/>
+	<import resource="applicationContextService.xml"/>
+	<import resource="applicationContextDao.xml"/>
+
+
+	
+	IOC启动时,会给servlet中的 IStudentService studentService;赋值
+	但是在使用时却没有值,原因:
+	Servlet容器(web容器,tomcat容器):request请求,请求的是tomcat不是IOC容器
+	springIOC容器:启动时会将IOC容器内的东西初始化并依赖注入,
+			bean的实例化,DI是保存在springIOC容器中
+			但网页请求保存在servlet容器中,需要互通两个容器之中的对象
+
+	可以使用servlet中的init()方法
+
+	web项目获取spring上下文对象
+		ApplicationContext context = WebApplicationContextUtils.getWebApplicationContext(this.getServletContext());
+	不同的applicationContext.xml中需要import
+
+十二.spring 和 Mybatis整合
+	Struct2 SpringMVC dubbo Quartz.....Hiberante
+	目前整合都是spring整合其他
+	
+	整合思路:
+		1.可以发现Mybatis最终是通过sqlSessionFactory来做操数据库,
+		spring整合mybatis就是将mybatis的sqlsessionfactory交给spring
+		2.需要的jar包
+			commons-dbcp2-2.1.1.jar
+			commons-logging-1.1.1.jar
+			commons-pool2-2.4.2.jar
+			log4j-1.2.17.jar
+			mybatis-3.4.6.jar
+			mybatis-spring-1.3.1.jar
+			mysql-connector-java-8.0.11.jar
+			spring-aop-4.3.9.RELEASE.jar
+			spring-beans-4.3.9.RELEASE.jar
+			spring-context-4.3.9.RELEASE.jar
+			spring-context-support-4.3.9.RELEASE.jar
+			spring-core-4.3.9.RELEASE.jar
+			spring-expression-4.3.9.RELEASE.jar
+			spring-jdbc-4.3.9.RELEASE.jar
+			spring-tx-4.3.9.RELEASE.jar
+			spring-web-4.3.9.RELEASE.jar
+		3.类,表
+		4.Mybatis配置文件
+		5.通过mapper.xml将表类建立映射关系
+		6.不再依赖于config.xml,产生这个对象所需要的数据库信息放入spring配置文件中,替代Mybatis配置文		件
+		7.配置Spring配置文件applicationContext.xml
+		8.使用整合产物开发程序
+			目标:通过spring产生Mybatis最终操作所需要的动态mapper对象(StudentMapper对象)
+			spring产生mybatis动态代理对象有三种方法:
+				1.Dao层实现,继承SqlSessionDaoSupport类
+					SqlSessionDaoSupport类提供了一个属性 sqlSession
+
+十三.整合的详细过程
+	1.加载数据库配置文件bd.properties
+	<!--加载  db.properties-->
+	<bean id="config"class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">
+		<property name="locations">
+			<array>
+				<value>classpath:db.properties</value>
+			</array>
+		</property>
+	</bean>
+	2.配置数据库的连接信息
+		<!-- 配置数据库连接信息 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+		<property name="driverClassName" value="${driver}"></property>
+		<property name="url" value="${url}"></property>
+		<property name="username" value="${username}"></property>
+		<property name="password" value="${password}"></property>
+		<property name="maxConnLifetimeMillis" value="${maxConnLifetimeMillis}"></property>
+		<property name="maxIdle" value="${maxIdle}"></property>
+	</bean>
+	3.在springIOC容器中创建mybatis的核心类,SqlsessionFactory
+	<!-- 在springIOC容器中创建mybatis的核心类,SqlsessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 加载Mybatis配置文件 -->
+		<property name="configLocation" value="classpath:config.xml"></property>
+		<property name="mapperLocations" value="com/sky/mapper/*.xml"></property>
+	</bean>	
+	4.依赖注入
+	<!-- 在springIOC容器中创建mybatis的核心类,SqlsessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 加载Mybatis配置文件 -->
+		<property name="configLocation" value="classpath:config.xml"></property>
+		<property name="mapperLocations" value="com/sky/mapper/*.xml"></property>
+	</bean>	
+	5.将mybatis配置信息托管给spring时,事务提交方式为spring自动提交
+
+优化配置:取消mapper.impl中的实现类
+	<!-- 第二种方式,不需要实现类 通过mybatis提供的实现类-->
+	<bean id="studentMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="com.sky.mapper.StudentMapper"></property>
+		<property name="sqlSessionFactory" ref="sqlSessionFactory"></property>
+	</bean>
+	缺点:每一个mapper都需要配置
+第三种方式:批量配置实现类
+	<!-- 第三种方式:批量配置mapper 
+		批量产生mapper对象在springIOC中的id值默认就是接口名,并且首字母小写
+	-->
+	<bean id="studentMapperPackage" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 指定批量产生哪个包下的mapper -->
+		<property name="basePackage" value="com.sky.mapper"></property>
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+	</bean>
+	<bean id="studentService" class="com.sky.service.impl.StudentServiceImpl">
+		<property name="studentMapper" ref="studentMapper"></property>
+	</bean>
+	注意:
+		不再使用name="sqlSessionFactory" 而使用name="sqlSessionFactoryBeanName" ,
+		并且其返回值为String,因此用value引用
+十四:注解形式注入
+	切记使用扫描器
+	<!-- 扫描器 -->
+	<context:component-scan base-package="com.sky.service.impl"></context:component-scan>
+
+studentService的注解形式的注入:
+
+@Service("studentService")	//相当于配置bean
+public class StudentServiceImpl implem	ents IStudentService{
+	@Autowired	//自动装配 byType
+	@Qualifier("studentMapper") //byName
+	private StudentMapper studentMapper;
+	
+	public StudentMapper getStudentMapper() {
+		return studentMapper;
+	}
+
+	public void setStudentMapper(StudentMapper studentMapper) {
+		this.studentMapper = studentMapper;
+	}
+
+	@Override
+	public void insertStudentByid(Student student) {
+		studentMapper.insertStudentByid(student);
+	}
+	
+}

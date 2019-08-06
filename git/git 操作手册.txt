@@ -1,0 +1,131 @@
+一.Git 和 SVN的区别
+git:版本控制软件
+区别:git是一个分布式版本控制软件
+分布式:源码版本库一般存放在中央仓库	Svn没有网络无法访问中央仓库
+GIT :每人一个版本库(中央仓库),如果没网,则进行本地的管理,如果需要交互,将二者版本库相互推送
+
+二.本地仓库
+A 本地工作目录  B暂存区  C版本库
+如果没有暂存区,频繁的提交会导致版本号剧增	可以减少版本库里的版本代码
+
+要将自己的版本库推送给别人 push 获取别人的版本库 pull
+
+三.常用命令
+git add:将本地文件 增加到暂存区
+git commit:将暂存区的内容提交到本地仓库
+git push:将本地仓库的内容 推送到 远程仓库
+git pull:将远程仓库的内容 拉取到 本地仓库
+
+四.版本库及其分支
+版本库可以有多个存在,每一个版本库都是一个分支	默认的分支master 主分支
+
+五.git的安装	官网http://msysgit.github.io
+安装时 Use git from git bash only..
+配置path:bin
+配置git:右键 git-bash
+
+配置用户名邮箱:
+$ git config --global user.name "skykuqi"
+$ git config --global user.email "379712261@qq.com"
+
+查看是否配置成功C:\Users\USER\.getconfig
+
+搭建一个git服务器:相当于远程仓库:统一的托管网站 github
+
+免秘钥登录:为了在本地和远程仓库之间进行免秘钥登录	ssh key
+
+配置ssh: 先 在本地配置,发送给远程
+$ ssh-keygen -t rsa -C 379712261@qq.com
+Enter file in which to save the key (/c/Users/USER/.ssh/id_rsa):
+	表示生成文件路径 
+
+打开GitHub settings SSH keys / Add new	key中输入刚才在本地生成的ssh	id_rsa pub
+把最后的回车删除
+
+测试通信: ssh -T git@github.com		Yes 	出现known_hosts,表示本地和远程成功通信
+如果失败,可以多次尝试	检查回车符 空格符问题
+
+六.在本地新建Git项目并发送
+在项目文件夹内打开bash
+输入:git init
+
+在远程建立一个git库
+new -建立项目-生成https://github.com/skykuqi/mygitremote.git git@github.com:skykuqi/mygitremote.git
+
+本地项目-远程项目关联
+git remote add origin git@github.com:skykuqi/mygitremote.git
+
+六.项目的交互
+1.第一次发布项目(本地 -- 远程)
+git add .		//文件 -- 暂存区
+git commit -m	"注释内容"	//暂存区-本地分支(master)
+git push -u origin master
+
+2.第一次下载项目(远程 --本地)
+git clone "项目的唯一标识符"
+
+3.更新(远程 - 本地)
+git add .
+git commit -m "提交到分支"
+git push origin master
+
+4.移交(本地 - 远程)
+git pull
+
+七.eclipse中使用git
+eclipse 自身支持 eclipse egit
+
+1.配置:
+preferences 中设置git clone的位置
+configuration中设置用户  用户名 邮箱
+搜索SSH2  配置SSH文件	默认已经自动配置
+
+2.如何通信
+a.第一次发布
+项目 右键-team -git -新建一个repository 仓库	finish
+首先需要先放入暂存区	add to index
+commit
+
+将项目推送到远程
+team - remote - push
+URI:github 项目的唯一标识符
+
+选择https
+
+输入用户名 密码
+b.第一次下载
+impor git ...
+c.更新
+team add to index
+team commit 
+team push
+
+commit and push :可以单独push某一个文件
+commit : 不能单独的push某一个文件,只能push整个项目
+
+d.移交
+
+八.Git冲突的解决
+1.进入git 同步视图	synchronize workspace
+2.解决方案:
+	a.add to index 添加到本地暂存区
+	b.commit 提交到本地支持
+	c.更新服务端的分支内容到本地分支
+	d.选择修改或Merge tool
+	e.实现更新
+
+九.github 团队协作
+1.github中该项目 -settings 
+2.发送邀请链接
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,246 @@
+一.Activity的生命周期
+每一个可视化窗口包含自己的生命周期
+Activity的运行状态
+	1.创建时
+	2.暂停时
+	3.停止时
+	4.销毁时
+
+oncreat:创建
+onstart:可见	但是无法操作
+onResume:可见 可以操作
+onPause:可见 无法操作 时区焦点
+onStop:不可见 无法操作
+onDestroy: 摧毁
+onRestart:第二次加载时调用,重新唤醒页面
+
+创建第一个activity:
+	oncreate onstart onresume 
+创建第二个activity:
+	第一个 onPause
+	oncreate 
+	第二个 onStop
+重新打开第二个
+	onrestart
+	onstart
+	onresume
+退出当前应用
+	onpause
+	onStop
+	onDsetory
+当页面关闭时,才会调用ondestory
+finish() 方法可以表示为结束关闭,当前的activity
+Log.e(TAG,"任务栈:this.toString()")	打印当前activity的地址
+
+二.activity的任务栈 启动模式
+清单文件	每一个activity都需要在清单文件中注册
+android:launchMode:
+	singleInstance:	系统重新开启一个任务栈,单独开辟了一个空间
+	singleTask:将其加在第一个界面,在返回到该界面时,则将第一个界面以上的位置全部弹栈
+	singleTop:当前activity只要在任务栈的最顶部,就不会被在此创建
+	standard:默认 被创建 每一次的跳转都会被重新创建 无限创建
+
+三.RecyclerView创建Android对话框
+tackAdapter.notifyItemInserted(..)	更新数据,只插入新添加的,不需要重新遍历1
+revyvlerView.scrollToPostion(msgList.size() - 1)	当前滚轮滚到的position
+setVisibility() 	隐藏对话框
+
+四.SDK NDK
+SDK:java为基础
+NDK:C,C++提供的类库	很多手机能控制硬件,如遥控器,运用的则是NDK,可以交互硬件 需要JNI的硬件交互接口技术
+
+开发不一定需要使用JAVA,谷歌的新语言,kotlin也可以
+
+五.安卓架构图
+	闭源的LINUX内核
+	系统运营层及类库:提供一些软件支持	包换android runtime:android运行层:核心类库支持,虚拟机
+	应用程序框架层:application framework 使用最多的层,开源层
+	应用程序层:Application 应用层,自带电话..发短信.....
+
+七.碎片android fragment
+	最初目的是为了兼容pad	给与不同的视觉页面
+应用场景:商城App
+顶部:有许多的UI轮播图等内容....
+内容部分:瀑布流的不规则列表
+底部:有购物篮,我的,消息....等等的跳转空间
+
+使用:
+描述UI布局:layout
+
+简介:
+初始化方法 create: onAttach()	fragment 和activity绑定
+	onCreate():初始化fragment布局,不建议进行耗时的操作,比如说读取数据库列表
+	onCreateiew():加载完成,但是不能交互
+ onActivityCreate():加载完成,可以和activity交互操作
+started: onStart();开始执行方法,由不可见变为可见
+Resumed:onResumed();处于活动状态,可预知交互
+Paused:onPause();暂停,但是依然可见,不能交互
+Stopped :onStopped();执行该操作fragment完全不可见
+Destoryed:onDestoryView();
+	onDestory()
+ 	onDetach()
+setUserVisibleHint()方法:Fragment可以来回替换
+
+八.android 四大组件 五大布局
+四大组件:
+1.activity 活动
+2.service 服务
+3.broadcaseReceiver 广播
+4.接收器 ContentProvide 内容提供器
+
+九.广播		发送消息,实现不可见的一个传值
+标准广播:normalbroadcasts
+	广播---接收者A B C D无序 同时接收
+有序广播:
+	广播---接收者A B C D按顺序接收
+<intent-filter android:priority="200">
+                <action android:name="MY_BROADCAST" />
+            </intent-filter>
+ android:priority="200" 先接受该参数大的广播
+abortbroadcast（）；
+接收到该广播之后不再散发
+
+可以直接在other中选择创建广播broadcast 勾中的表示可以在其他位置获取
+在注册清单xml中静态注册
+  <receiver
+            android:name=".MyReceiver"
+            android:enabled="true"
+            android:exported="true">
+          <!--  <intent-filter>
+                <action android:name="CONN"
+            </intent-filter>-->
+        </receiver>
+
+动态声明一个广播接收者
+class NetWork extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //这是一个网络状态监听
+            ConnectivityManager manager = (ConnectivityManager) getSystemService(context.CONNECTIVITY_SERVICE);
+            //涉及到了系统的隐私状态
+            //注册清单中添加 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            //该方式为静态添加
+            NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+            if(networkInfo != null && networkInfo.isAvailable()){
+                Toast.makeText(context, "接收到了网络状态", Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(context, "未接收到网络状态", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+需要销毁该广播
+ @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(netWork);
+    }
+
+十.服务 service		不可见的保活
+QQ音乐等软件退出后,任然可以在后台使用...
+a.新建类MyService 继承 android.app.Service
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        //绑定服务操作
+        return null;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        //解绑操作
+        return super.onUnbind(intent);
+    }
+
+    @Override
+    public void onCreate() {
+        //创建服务
+        super.onCreate();
+b.注册文件中注册
+<service android:name="com.sky.service.MyService"/>
+c.绑定activity
+d.服务通知显示:
+
+十一.数据存储
+	1.四种数据存储方式:文件存储 IO流的形式,sharePreferences 轻型的简单数据存储(简单数据类型的存储),数据库存储 sqlite 轻型的数据库,网络存储
+
+
+十二.广播---广播的退出	
+1.页面描述	登录注册--跳转到一个新的页面--在页面中点击退出,会发送一个广播,然后退出账户
+
+十三.sqlite 数据存储
+1.轻量型数据库 提供5中数据类型 	NULL INTEGER TEXT REAL BLOB
+2.使用
+	a.新建  DataBaseHelper extends SQLiteOpenHelper 
+	b.实现其构造方法和抽象方法 onCreate(初始化时的加载,必须有一张表在此时加载) onUpgrade(更新,也可以在这个方法内创建子表)
+3.adb shell的使用
+a.配置环境变量path: F:\sdk\platform-tools  adb.exe所在目录
+b.adb shell 下进入 data/data/com.sky.myapplication.study02/database/xxxxx.db
+	chcp 65001	设置文字编码,防止乱码
+	sqlite3 xxxx.db 命令进入操作
+	.quit 		退出数据库的操作
+	
+4.推荐使用的三方工具	GreenDao	Litepal
+
+
+十三.运行时权限
+	安卓23版本以上(包含23版本,6.0+)  需要对手机的设置权限添加提醒
+1.需要在注册文件种声明该权限
+2.在Activity中动态获取该权限
+	  if (ContextCompat.checkSelfPermission(PermissionActivity.this, Manifest.permission.CALL_PHONE)
+                        != PackageManager.PERMISSION_DENIED) {
+                    //此时已经获取该权限
+                    startActivity(intent);
+                } else {
+                    //申请当前权限	Activity activity, String[] permissions, int requestCode
+                    ActivityCompat.requestPermissions(PermissionActivity.this,
+                            new String[]{
+                                    Manifest.permission.CALL_PHONE
+                            }, 1);
+                }
+3.Activity中的onRequestPermissionsResult  方法可以对权限获取给予响应
+
+十四.内容提供器 ContentProvide
+1.广播的复习
+	a.实例化一个广播接收器,继承BroadcastReceiver
+	b.注册广播接收器
+	c.发送广播
+2.内容提供者: 	内容提供器(contentprovider)	内容解析器/内容接收器	(专门提供给其他APP使用)	需要使用sqlite
+提供一个方法:
+
+十五:WebView
+加载网页及其他资源	网页 word execl	富文本编辑器
+
+十六.网络请求
+	GET POST
+
+十七.UI的优化
+1.drawable shape的应用
+2.材料设计 Material Design:
+三维,多了一个z轴:好比一个button漂浮于所有界面之上,就是z轴	增加立体感
+卡片:
+顶部悬浮:
+3.DrawerLayout 	可设置侧滑效果
+4.NaviagationView	可设置参数 app:meun 可设置菜单
+app:headerLayout	可以加载其头部布局
+	
+
+
+
+	
+	 
+	
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+

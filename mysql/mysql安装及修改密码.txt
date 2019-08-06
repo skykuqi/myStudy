@@ -1,0 +1,20 @@
+一.安装mysql
+1.cmd 
+mysqld --install;
+net strat mysql;
+2、初始化mysql数据库，输入“mysqld --initialize --user=root --console”。下面红色文字为初始化后的root 密码
+3、使用生成的密码登录mysql，通过“set password=password('123456')”修改密码。此处将root密码设置为123456
+二.忘记密码后的重置
+net start mysql;
+mysql --shared-memory --skip-grant-tables;
+在新的cmd中打开
+mysql;
+flush privileges;
+alter user 'root'@'localhost' identified by 'yourpassword';
+quit;
+三.mysql链接到navicat
+1、use mysql;
+
+2、alter user 'root'@'localhost' identified with mysql_native_password by '********';
+
+3、flush privileges;

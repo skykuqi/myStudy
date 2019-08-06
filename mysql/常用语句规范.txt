@@ -1,0 +1,52 @@
+创建主键
+ alter table user add primary key(id);
+
+增加主键
+alter table user add primary key(id);
+
+设置自动增长
+alter table user modify id int auto_increment;
+
+创建表时设置主键并自动增长
+ create table demo(id int primary key auto_increment,name varcahr(10));
+
+临时修改结束符号
+delimiter $$(自己定义的结束符)
+
+存储过程的定义
+create PROCEDURE countByName(in gName varchar(10),out countName int)
+BEGIN
+select count(*) into countName from department where name = gName;
+end
+	注意varchar类型必须赋值!!!!
+
+增加列
+alter table user add column grade varchar(5)
+
+定义默认值
+alter table表名 alter column字段名 set default默认值;
+
+为表添加外键(user(dep_id) --> department(id ))
+alter table user add constraint fk_user_department_dep_id foreign key(dep_id) references department(id);
+
+
+修改时区
+show variables like '%time_zone%';
+set global time_zone='+8:00';
+
+清空表
+truncate table student
+
+查看表的字段
+desc student
+
+修改数据类型
+alter table user modify column id varchar(30);
+
+建立索引
+create index index_name on tablename(col,col);
+查看表的字段
+desc tb;
+修改表名
+ALTER  TABLE teacerCard RENAME TO teacherCard 
+

@@ -1,0 +1,77 @@
+一.公众号开发环境的搭建
+	内网穿透:使我们写的程序可以被其他用户看到.
+		花生壳,nat123	ngrok都可以实现
+二.开始开发
+	用户开启的公众号窗口--微信的服务器
+	查看微信的接入指南:
+		URL	接收微信服务器发过来的消息
+		Token	任意填写	生成签名
+	完成签名校验
+三.接收普通消息
+	当普通微信用户向公众账号发消息时，微信服务器将POST消息的XML数据包到开发者填写的URL上。
+<!--ToUserName	开发者微信号
+        FromUserName	发送方帐号（一个OpenID）
+        CreateTime	消息创建时间 （整型） 单位是秒
+        MsgType	消息类型，文本为text
+        Content	文本消息内容
+        MsgId	消息id，64位整型-->
+<xml>
+    <ToUserName><![CDATA[gh_fddcfc1c0a69]]></ToUserName>
+    <FromUserName><![CDATA[oMAF81IjCdTopPRGC8WilIOHcFkg]]></FromUserName>
+    <CreateTime>1555479230</CreateTime>
+    <MsgType><![CDATA[text]]></MsgType>
+    <Content><![CDATA[????????]]></Content>
+     <MsgId>22269106597742816</MsgId>
+</xml>
+四.处理消息
+	需要jar包:	dom4j-1.6.1.jar和jaxen-1.2.0-atlassian-2.jar
+
+   /**
+     * XML数据包的解析
+     * @param request
+     * @return
+     */
+    public static Map<String,String> requestMap(HttpServletRequest request){
+        Map<String,String> map = new HashMap<String,String>();
+        ServletInputStream inputStream = null;
+        try {
+            inputStream  = request.getInputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        SAXReader reader = new SAXReader();
+        Document document = null;
+        try {
+            //读取输入流,获取文档对象
+            document  = reader.read(inputStream);
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        }
+        //获取文档对象根节点
+        Element root = document.getRootElement();
+        //获取根节点的所有子节点
+        List<Element> elements = root.elements();
+        for (Element element:elements) {
+            map.put(element.getName(),element.getStringValue());
+        }
+        return map;
+    }
+
+五.用户消息的回复
+
+    开发者可以在响应包（Get）中返回特定XML结构，来对该消息进行响应（现支持回复文本、图片、图文、语音、视频、音乐）。严格来说，发送被动响应消息其实并不是一种接口，而是对微信服务器发过来消息的一次回复。
+
+六.图文消息的回复
+    item多个
+七.AccessToken的处理
+	access_token是公众号的全局唯一接口调用凭据，公众号调用各接口时都需使用access_token。开发者需要进行妥善保存。access_token的存储至少要保留512个字符空间。access_token的有效期目前为2个小时，需定时刷新，重复获取将导致上次获取的access_token失效。	
+八.自定义菜单 
+	1、自定义菜单最多包括3个一级菜单，每个一级菜单最多包含5个二级菜单。
+	2、一级菜单最多4个汉字，二级菜单最多7个汉字，多出来的部分将会以“...”代替。
+	3、创建自定义菜单后，菜单的刷新策略是，在用户进入公众号会话页或公众号profile页时，如果发现上一次拉	取菜单的请求在5分钟以前，就会拉取一下菜单，如果菜单有更新，就会刷新客户端的菜单。测试时可以尝试取消	关注公众账号后再次关注，则可以看到创建后的效果。
+九.模板消息
+	http请求方式: POST
+	https://api.weixin.qq.com/cgi-bin/template/api_set_industry?access_token=ACCESS_TOKEN
+十.素材管理:
+	需要发送POST表单请求.
+		

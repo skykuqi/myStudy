@@ -1,0 +1,139 @@
+一.版本控制	
+	主流SVN GIT
+SVN工作原理:基于客户端服务端模式
+例如:四个人ABCD同时开发一个项目,AB同时写hello.java文件,怎么保证不冲突,可以用中央仓库,将所有代码都放入中央仓库,每个人从中央仓库拷贝一个副本,对代码进行修改,将改完的结果及时提交,
+假设中央仓库中原本存放的项目为:HelloWorld_0,被B修改为HelloWorld_1,则其他人需要更新代码,始终让代码和中央仓库保持一致
+
+中央仓库:存放了项目代码的所有版本,每提交一次,HelloWorld_0,HelloWorld_1,HelloWorld_2,这些所有版本都会被保存,因此可以回退版本
+
+一般SVN的常见操作:
+	1.发布项目(share project),若中央仓库中没有项目,那么A第一次将项目放到服务器,则成为发布项目,一般为项目组长,项目经理的操作
+	2.下载项目(check out),检出项目:B将项目下载到本地
+	3.提交项目(commit):B将项目修改了一部分,将修改后的代码提交到中央仓库(同步到服务器中)	本地--服务器,则C需要更新自己的项目
+		-编写完某一个小功能,下班前提交	
+	4.更新项目(update)	服务器--本地 将服务器中的最新代码同步到本地
+		-编写功能之前,每天上班前
+更新和提交项目需要及时,防止冲突		编写之前先更新,写完之后马上提交
+
+二.安装SVN	http://subversion.apache.org/下载
+a.配置环境变量	会自动配置 F:\svn\svn_progress\bin
+b.验证配置是否成功: svn --version
+c.配置中央仓库	
+将本地目录设置为中央仓库(保存项目的各个历史版本)
+svnadmin create F:\\svn_rep
+会自动生成一些文件到中央仓库 
+d.启动SVN服务
+	1.后台命令行方式
+		svnserve -d -r F:\\svn_rep
+	2.操作系统注册方式	以管理员方式运行cmd
+		services.msc 中注册	sc create MySvn binpath="F:\svn\bin\svnserve.exe --service -r F:\\svn_rep" start=auto depend=Tcpip
+	3.如何启动 sc start 服务名
+		关闭 sc stop 服务名
+		删除 sc delete 服务名
+
+三.如何访问SVN项目
+1.匿名访问(不需要用户名密码)
+	仓库\config\svnserve.conf
+anon-access = read		只读	
+# anon-access = write		可读可写
+# anon-access = none		没有任何权限	一般情况都是none
+
+匿名只能读,不能写
+
+2.授权访问
+anon-access = none	匿名无权
+auth-access = write	授权可读可写
+
+3.编写一个权限文件
+password-db = passwd	27行附近注释打开	表示授权人的用户名密码存放在passwd	文件中,该文件也在该目录下
+authz-db = authz	36行附近注释打开	开启权限文件	authz	表示全线文件是authz时
+用户名 = 密码
+
+4.用户文件 passwd
+用户名 = 密码 user = 123 user账户的密码为123
+
+5.编写授权文件authz
+分组
+[groups]
+# harry_and_sally = harry,sally
+# harry_sally_and_joe = harry,sally,&joe
+dev = sky,user
+权限
+[/]
+@dev = rw
+*=
+dev开发组的人员可读可写,可以操作侧目录是所有,其他人员什么都不能干,则*= 为空
+
+四.eclipse中使用svn
+a.离线方式
+1.检查eclipse是否存在SVN,右键项目--Team--share project--默认直接到git
+2.需要插件支持,elipse_svn_site_1.10.5.zip	SVN离线包,复制到eclipse安装目录dropins插件包,解压缩
+3.share project中可以看到svn则说明安装成功
+b.在线方式
+1.help --eclipse Marketplace	搜索subversion 把subeclipse安装
+c.如何使用
+1.项目组长发布项目
+右键要发布的项目--team-share project - svn - ...输入发布的地址svn://127.0.0.1/project
+右键提交:第一次发布项目
+项目文件会显示提交项目的时间和提交者
+黄色圆柱:本地无未提交代码
+*:本地有未提交的代码
+红色叹号:冲突
+2.组员下载检出项目 
+file-import-搜svn
+3.修改大量文件后
+项目右键 --team -- 与
+修改代码之后提交 右键 team -- 与资源库同步
+可以看到所有未提交的代码	多选提交
+4.切换用户:项目与资源库同步
+蓝色剪头:服务端有最新代码,本地还没有更新
+5.保存密码的弊端:
+	一旦密码错误,修改密码较为复杂
+6.修改SVN密码:
+C盘-用户--当前用户--AppData-Roaming-SubVersion
+C:\Users\USER\AppData\Roaming\Subversion\auth	目录下的所有文件都删除,则可以重置代码
+
+7.冲突:
+中央仓库中代码基础上,A B同时修改同一个文件,A对该文件第12行修改,B也对该文件第12行修改
+先到先得,B先提交,则A再提交会报错
+与资源库同步:红色箭头	代表冲突 打开冲突文件,则可以知道哪些代码内容冲突
+
+8.解决冲突: 右键红色箭头文件 -- team -- 编辑冲突(需要先更新项目)
+手动标记为解决
+
+更新时会发现冲突 -->右键编辑冲突 --> 重新提交
+
+五.恢复和查看历史版本
+右键覆盖内容,则可以覆盖恢复到历史版本  如果此操作报错	需要将svnserve.conf 中的设置anon-access = none,svn的bug 
+右键--team --历史资源
+
+六.发布项目的问题
+局域网内A(项目组长) 192.168.1.101  B192.168.1.102	C 192.168.1.103
+A将项目发送到中央仓库,将中央仓库设置为本机
+B 访问 svn://192.168.1.101就可以访问到	内网发布
+
+如果需要在外网访问:需要访问	cmd ipconfig
+将内网和外网映射 nat123可以实现	即内网穿透
+
+内网访问可能需要关闭防火墙
+七.将svn发布到外网:
+1.	nat123等软件,将内网映射到威望
+2.租用一台服务器新网,万网,阿里云(),将项目发布到服务器中
+3.svn托管网站http://www.svnchina.com
+
+名字密码是注册时的名字密码
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		

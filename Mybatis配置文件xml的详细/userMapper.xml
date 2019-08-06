@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--  Mybatis约定:
+ 	1.输入输出参数只有一个，但可以写成数组 ,类对象等-->
+<!-- 输入的类型：
+	1.简单类型（8个基本类型+String） 是可以使用任何占位符 #{xxxx}
+	2.如果是对象类型，必须写成对象名称 #{对象名称属性} -->
+<!-- 映射文件的路径 该Mapper文件映射的唯一标识 -->
+<!-- 注意事项
+	1.如果采用的事物处理方式为JDBC则需要手动commit,即session.commit(); session.close(); -->
+<mapper namespace="com.shxt.model.userMappper">
+	<!-- 后续使用namespace.id唯一确认Sql语句 
+		resultType: 查询 的返回值类型
+		parameterType:预传值数据类型
+	-->
+	<!-- 规范化编程，使用与操作相符合的标签 -->
+	<!-- 按住ctrl出现下划线说明使用正确 -->
+	<select id="selectUserById" resultType="com.shxt.model.User" parameterType="java.lang.Integer">
+		<!-- 不要以分号结尾 -->
+		select * from user where id = #{id}
+	</select>
+	<!-- 不论返回的对象是一个还是多个，都只要写一个返回的对象类 -->
+	<select id="selectAllUser" resultType="com.shxt.model.User">
+		select * from user
+	</select>
+	<insert id="addUser" parameterType="com.shxt.model.User" >
+		insert into user(username,password) values (#{username},#{password});
+	</insert>
+	
+	<update id="updateUserByAccount" parameterType="com.shxt.model.User">
+		update user set password = #{password} where username = #{username}
+	</update>
+	
+	<delete id="delteUserById" parameterType="int">
+		delete from user where id = #{id}
+	</delete>
+</mapper>

@@ -1,0 +1,66 @@
+一.软件架构发展史
+1.all in one 
+	例:一个类Service.java:所有代码都在这个类中,数据访问代码,控制跳转代码,业务处理代码
+	弊端:所有代码都在一个类,容易造成代码混乱,不容易维护
+2.MVC/三层架构	弊端:所有东西都在一台计算机内,如果访问量过大,计算机的并发能力有限
+	将项目结构按功能区分类
+	视图层:View	控制器层:controller  模型层:M
+3.RPC 远程调用
+	两台计算机A.B
+	客户端只写web界面:html css
+	服务端:学生管理系统(发布端口号:8881)	图书管理系统(8882)	注册系统(8883)
+	客户端根据不同的服务类型,调用不同的端口,增强系统的并发能力,可以让一个项目部署在多个不同的计算机中
+	弊端:此种模式的IP+端口号 较乱,分散	有一定的维护难度
+4.SOA:面向服务的结构
+	在客户端和服务端中间,存在一个注册中心(服务中心),将每个系统的端口号都注册进来
+	学生管理系统:192.168.1.101:8881		图书管理系统: 192.168.1.101:8882
+	以后需要访问图书管理系统,只需要根据名字自动寻找(类似于域名的作用,比如访问百度,不需要知道百度的ip 地址)
+
+zookeeper:树形结构
+	一个根,两个页,将每个服务对应的IP端口号放到每一个zookeeper节点中
+
+5.基于SOA架构的框架Dubbo,由阿里巴巴提供
+	注册中心Reqister:	2.发布服务(纳入服务中心 studentServer: 192.168.1.101:8881)
+	服务提供方Provider: 服务容器 Container(例如Tomcat)	1.运行提供方提供的服务
+	消费方Consumer:		3.订阅服务(Consumer -> Reqister) 4.推送服务(Reqister -> Consumer) 实时监听服务方是否发生改变
+		5.直接调用服务方的服务	
+	监听器Monitor:图形化的显示消费方和服务方
+
+二.准备环境
+1.实现注册中心 ,推荐zookeeper
+Linux 中安装zookeeper
+	a.JDK的安装
+		下载jdk.rpm
+		安装 rpm -ivh jdk-8.....xxxxxx.rpm
+	b.jdk的安装目录,urs /java
+	c.配置环境变量	
+		vi /ect/profice	
+		在文件最后追加
+		export JAVA_HOME=/usr/java/jdk1.8.0_65
+		export CLASSPATH=$JAVA_HOME$\lib:$CLASSPATH
+		export PATH=$JAVA_HOME$\bin:$PATH		
+	d.source /etc/profile	刷新环境变量
+2.安装完成jdk 后安装zookeeper
+	a.下载zookeeper
+	b.tar -zxvf 文件名  解压文件 
+	c.重命名conf文件夹下 zoo_sample.cfg  为zoo.cfg
+	mv zoo_sample.cfg  zoo.cfg	需要在当前目录下执行
+
+	查看文件内容,可以发现:
+	clientPort=2181		zookeeper的访问端口号 2181
+	dataDir=/tmp/zookeeper	需要一个数据文件 以及其所在目录,需要修改目录:
+		在conf同级文件夹下创建一个data目录,并设置其为数据目
+
+3.启动服务	zsSERVER.sh	
+	# bin/zkServer.sh start
+
+三.服务方代码;
+1.pom.xml:maven依赖jar包
+2.在web.xml中配置spring
+3.新建spring配置文件(main/servie目录下)
+4.接口及实现类书写	提供服务,模拟
+5.配置xml文件
+	
+	
+	
+	

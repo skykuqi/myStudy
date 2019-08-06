@@ -1,0 +1,1284 @@
+一.Mysql主流按本
+1.5.x 5.0--5.1 早期产品的延续,升级维护
+  5.4 - 5.x	Mysql整合了三方公司的新存储引擎 5.5-5.7	推荐使用5.5
+二.Lixun中安装Mysq
+	yum rpm
+1.下载rpm压缩包	共两个 客户端和服务端
+2.安装 rpm -ivh ... 服务端
+3.存在冲突需要删除mysql-libs-5.1.73-7.el6.x86_64
+4.删除上述文件 yum -y remove mysql-libs-5.1.73-*
+5.安装成功后显示
+PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL root USER !		别忘了给root用户设置密码
+To do so, start the server, then issue the following commands:
+
+/usr/bin/mysqladmin -u root password 'Mysql_123'
+/usr/bin/mysqladmin -u root -h centos-64 password 'new-password'
+
+Alternatively you can run:
+/usr/bin/mysql_secure_installation
+注意:如果报错提示"GPG keys..."安装失败,解决的方案:
+	安装 rpm -ivh ... --force --nodoeps	
+6.安装 rpm -ivh ... 客户端
+7.验证安装是否成功 mysqladmin --version
+
+三.MYSQL命令
+启动mysql服务:service mysql start
+关闭mysql服务:service mysql stop
+重启mysql服务:service mysql restart
+清屏: linux自带 ctrl+L	mysql中 system clear
+1.reboot 重启系统后查看 mysql
+	可能会报错"mysql.sock 不存在"
+	原因:mysql 服务没有启动
+2.为设置密码输入 mysql 直接登录 不安全
+3.需要设置密码(给root用户增加密码) /usr/bin/mysqladmin -u root password 'Mysql_123'
+4.登录	mysql -u root -p    password
+5.查看mysql安装路径	ps -ef|grep mysql 可以查看到数据存放目录 和pid文件目录(mysql唯一标识符的文件目录)
+6.mysql 核心目录介绍: 
+	/var/lib/mysql	mysql的安装目cd录
+	/usr/share/mysql	mysql配置文件信息
+	/usr/bin:命令目录(mysqldamin mysqldump等命令)
+	/etc/init.d/mysql:mysql启停脚本
+
+四.MYSQL配置文件
+1.常见配置文件 
+my-huge.cnf 	高	服务器	1--2G内存
+my-large.cnf 	中等规模
+my-medium.cnf 	一般规模
+my-small.cnf	较小
+但是以上配置文件,mysql默认不能识别,默认只能识别 /etc/my.cnf
+因此想要采用上述配置文件,需要将其复制到 /etc/my.cnf
+2.赋值my-huge.cnf 到/etc/my.cnf
+cp /usr/share/mysql/my-huge.cnf  /etc/my.cnf
+注意 mysql5.5默认配置文件/etc/my.cnf;	Mysql5.6 默认配置文件为/etc/mysql-default.cnf
+3.mysql的字符编码
+	show variables like '%char%';
++--------------------------+----------------------------+
+| Variable_name            | Value                      |
++--------------------------+----------------------------+
+| character_set_client     | utf8                       |
+| character_set_connection | utf8                       |
+| character_set_database   | latin1                     |
+| character_set_filesystem | binary                     |
+| character_set_results    | utf8                       |
+| character_set_server     | latin1                     |
+| character_set_system     | utf8                       |
+| character_sets_dir       | /usr/share/mysql/charsets/ |
++--------------------------+----------------------------+
+需要设置编码为UTF-8:
+在配置文件所在文件夹中修改:
+vi /etc/my.cnf
+[client]clocate 
+#password       = your_password
+port            = 3306
+socket          = /var/lib/mysql/mysql.sock
+default-character-set=utf8		需要加入这句话来设置默认字符集
+
+# Here follows entries for some specific programs
+
+# The MySQL server
+[mysqld]
+port            = 3306			发现mysql默认端口号为3306
+socket          = /var/lib/mysql/mysql.sock
+skip-external-locking
+key_buffer_size = 384M
+max_allowed_packet = 1M
+table_open_cache = 512
+sort_buffer_size = 2M
+read_buffer_size = 2M
+read_rnd_buffer_size = 8M
+myisam_sort_buffer_size = 64M
+thread_cache_size = 8
+query_cache_size = 32M
+# Try number of CPU's*2 for thread_concurrency
+thread_concurrency = 8
+character_set_server = utf8		加入以下三条来定于字符集
+character_set_server=utf8
+collation_server=utf8_general_ci	定义排序规则
+
+
+[mysql]
+default-character-set=utf8		需要加入这句话来设置默认字符集
+no-auto-rehash
+# Remove the next comment character if you are not familiar with SQL
+#safe-updates
+4.修改完毕后需要重启mysql服务
+service mysql restart
+查看字符编码集	show variables lie '%char%';
++--------------------------+----------------------------+
+| Variable_name            | Value                      |
++--------------------------+----------------------------+
+| character_set_client     | utf8                       |
+| character_set_connection | utf8                       |
+| character_set_database   | utf8                       |
+| character_set_filesystem | binary                     |
+| character_set_results    | utf8                       |
+| character_set_server     | utf8                       |
+| character_set_system     | utf8                       |
+| character_sets_dir       | /usr/share/mysql/charsets/ |
++--------------------------+----------------------------+
+发现字符编码集被统一修改为utf8
+注意:修改字符编码集只对之后创建的数据库生效,因此我们建议mysql安装完毕后第一时间统一编码
+
+五.Mysql逻辑分层
+客户端client:
+1.客户端发送指令 select * from studnet 
+服务端server:
+1.客户端接收指令 select * from studnet 大致分为四层
+	a.连接层:直接交给连接层处理,提供与客户端连接的服务,本身不处理语句,交给下一层
+	b.服务层:(提供各种用户使用的接口(常见的增删改查),
+	还提供了sql优化器(MYSQL Query Optimizer):如果自己写的语句过于复杂性能低,mysql会自动等价优化.
+	弊端:可能造成开发混乱)
+	c.引擎层:提供了各种数据存储的方式:innodb myisam
+	区别:innodb:事务有优先(防止并发问题) 适合高并发操作,锁:行锁
+	myisam:性能优先	锁:表锁
+	d.存储层:最终的数据存储在该层,主要作用为存储数据
+
+查询MYsql支持哪些引擎:
+1.show engines;		查看数据库有哪些引擎支持
+2.如果执行上述操作的显示结果混乱,换行:
+	可以使用另一种方式show engines\g
+3.查看到的结果
+| Engine             | Support | Comment                                                        | Transactions | XA   | Savepoints |
++--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+| FEDERATED          | NO      | Federated MySQL storage engine                                 | NULL         | NULL | NULL       |
+| MRG_MYISAM         | YES     | Collection of identical MyISAM tables                          | NO           | NO   | NO         |
+| MyISAM             | YES     | MyISAM storage engine                                          | NO           | NO   | NO         |
+| BLACKHOLE          | YES     | /dev/null storage engine (anything you write to it disappears) | NO           | NO   | NO         |
+| CSV                | YES     | CSV storage engine                                             | NO           | NO   | NO         |
+| MEMORY             | YES     | Hash based, stored in memory, useful for temporary tables      | NO           | NO   | NO         |
+| ARCHIVE            | YES     | Archive storage engine                                         | NO           | NO   | NO         |
+| PERFORMANCE_SCHEMA | YES     | Performance Schema                                             | NO           | NO   | NO         |
+| InnoDB             | DEFAULT | Supports transactions, row-level locking, and foreign keys     | YES          | YES  | YES        |
++--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+可以看出默认为InnoDB
+也可以使用语句查看当前使用的引擎:show variables like '%storage_engine%';
++------------------------+--------+
+| Variable_name          | Value  |
++------------------------+--------+
+| default_storage_engine | InnoDB |
+| storage_engine         | InnoDB |
++------------------------+--------+	可以看到默认的存储引擎
+4.指定数据库对象的引擎
+a.MYsql中必须先指定一个数据库(随意),然后常见一张表	
+b. create table tb(
+    -> id int(4) auto_increment,
+    -> dept varchar(5),
+    -> name varchar(5),         
+    -> primary key(id)
+    -> )engine=MYISAM AUTO_INCREMENT=1		可以在这里定义使用的存储引擎为MYISAM 自增步长为1 默认字符编码集为utf8
+    -> default charset=utf8;
+
+六.SQL优化
+1.为什么要进行SQL优化:
+	性能低,执行时间长,等待时间长,SQL语句欠佳(连接查询),索引失效,服务器参数设置不合理(缓冲区,线程数)
+2. SQL:
+	编写过程:(dinstinct) 去重
+		select (dinstinct) .. from ... join..on ..where..group by...having...order by..limit...
+	解析过程:from..on...join..where..group by...having..select(dinstinct) ..order by limit...
+3.SQL优化 主要就是优化索引 索引:相当于书的目录
+	没有索引就想查字典没有目录,一页页翻找查询
+	索引:index 帮助MYSQL高效获取数据的数据结构(树:B树,Hash数...)
+	Mysql中使用B树索引:查看图片	也可以按三层结构展示,可以存放上百万条数据	Btree(一般值B+,数据全部存放在叶节点中)
+		B+数中查询任意的数据次数n次(B+数的高度)
+	索引的弊端:
+		a.索引本身很大,可以存放在硬盘中(主要,也可以放在内从中),不是所有情况都适用
+		b.少量数据情况,频繁更新的列,很少使用的列
+		c,索引会增加查询的效率,但是会降低增删改的效率
+	优势:
+		a.提高查询的效率(减低了IO的使用率)
+		b,降低CPU使用率(..ordey by age desc,如果不存在索引,需要重新排序,但是存在索引,已经完成了排序)
+
+七.索引
+单值索引:单列的值	age一个表可以有多个单值索引
+唯一索引:唯一索引不能重复	id
+复合索引:多个列构成的索引(相当于 二级目录: z:zhao s:shi)(name,age)
+1.创建索引 create 索引类型 索引名 on 表(字段)
+a.方式一
+单值索引:create index dept_index on tb(dept);
+唯一索引:create unique index name on tb(name);
+复合索引:create index dept_name_index on tb(dept,name);
+b.删除索引 可以直接删除该表 drop table tb;
+c.方式二 alter table
+单值索引:alter table tb add index dept_index(dept);
+唯一索引:alter table tb add unique index name_inde(name);
+复合索引:alter table tb add index name_dept_index(name,dept);
+d.注意事项:如果一个字段是primary_key 则该字段默认为主键索引,严格来说属于唯一索引
+	区别:主键不能为null,唯一索引可以为null
+e.删除索引 drop index 索引名 on 表名;
+f.查询所以:show index from table; show index from table \G格式化
+删除主键 alter table test01  drop primary key
+--+--------+------+------------+---------+---------------+
+| Table | Non_unique | Key_name        | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment |
++-------+------------+-----------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| tb    |          0 | PRIMARY         |            1 | id          | A         |           0 |     NULL | NULL   |      | BTREE      |         |               |
+| tb    |          1 | dept_idex       |            1 | dept        | A         |        NULL |     NULL | NULL   | YES  | BTREE      |         |               |
+| tb    |          1 | name_dept_index |            1 | name        | A         |        NULL |     NULL | NULL   | YES  | BTREE      |         |               |
+| tb    |          1 | name_dept_index |            2 | dept        | A         |        NULL |     NULL | NULL   | YES  | BTREE      |         |               |
++-------+------------+-----------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+ Index_type 显示为BTREE 即B树结构
+2.SLQ的性能问题
+a.SQL的执行计划;explain,可以模拟SQL优化器执行SQL语句,从而让开发人员知道自己编写的sql的状况
+b.MySql查询优化器会干扰我们的优化:
+查询执行计划: explain select * from tb;
++----+-------------+-------+--------+---------------+------+---------+------+------+---------------------+
+| id | select_type | table | type   | possible_keys | key  | key_len | ref  | rows | Extra               |
++----+-------------+-------+--------+---------------+------+---------+------+------+---------------------+
+|  1 | SIMPLE      | tb    | system | NULL          | NULL | NULL    | NULL |    0 | const row not found |
++----+-------------+-------+--------+---------------+------+---------+------+------+---------------------+
+1 row in set (0.01 sec)
+id:编号
+select_type 查询类型
+table 表名
+type   类型
+possible_keys 预测使用的索引
+key 实际使用的索引
+key_len 实际使用索引的长度	varchar(8) 如果得知索引的长度为8,可以猜测到是varchar(8)
+ref  表之间的引用
+rows 通过索引查询到的数据个数 
+Extra 额外的信息
+
+3.准备工作:建立三张表
+course:cid cname	tid
+teacher:tid tname	
+teacherCard: tcid tcdesc(教师证的描述信息)
+
+查询课程编号为2或教师证编号为3的老师的信息:
+explain select t.* from teacher t,course c,teacherCard tc where t.tid = c.tid and t.tcid = tc.tcid and (c.cid = 2 or tc.tcid = 3);
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra                          |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+|  1 | SIMPLE      | t     | ALL  | NULL          | NULL | NULL    | NULL |    3 |                                |
+|  1 | SIMPLE      | tc    | ALL  | NULL          | NULL | NULL    | NULL |    3 | Using where; Using join buffer |
+|  1 | SIMPLE      | c     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where; Using join buffer |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+id id值相同从上往下顺序执行 t3-tc3-c4		后缀数字代表数据的条数
+给teacher 表增加数据:insert into teacher values(4,'ta',4);
+insert into teacher values(5,'tb',5);
+insert into teacher values(6,'tc',6);
+
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra                          |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+|  1 | SIMPLE      | tc    | ALL  | NULL          | NULL | NULL    | NULL |    3 |                                |
+|  1 | SIMPLE      | c     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where; Using join buffer |
+|  1 | SIMPLE      | t     | ALL  | NULL          | NULL | NULL    | NULL |    6 | Using where; Using join buffer |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+观察到此时的执行顺序为 tc3-c4-t6 
+表的执行顺序 因数量的个数改变而改变的原因: 笛卡尔积
+表:		a	b	c
+数据个数:	2	3	4 = 2*3*4=6*4=24	优先计算数据量小的表,对于内存的消耗少
+	
+表:		a	b	c
+数据个数:	4	3	2 = 4*3*2=12*2=24	内存大的数据往后执行
+
+优先查询笛卡尔积小的
+id值如果不同,id值越大越优先被查询
+查询教授SQL课程的老师的描述(desc)
+
+
+例:查询教授SQL课程的老师的描述
+explain select tc.tcdesc from teacherCard tc,course c,teacher t where c.tid = t.tid and tc.tcid = t.tcid and c.cname = 'sql';
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra                          |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+|  1 | SIMPLE      | tc    | ALL  | NULL          | NULL | NULL    | NULL |    3 |                                |
+|  1 | SIMPLE      | c     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where; Using join buffer |
+|  1 | SIMPLE      | t     | ALL  | NULL          | NULL | NULL    | NULL |    6 | Using where; Using join buffer |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+这样的sql语句就是多表连接查询,可以改成子查询形式
+将以上多表查询转为子查询形式:
+explain select tc.tcdesc from teacherCard tc where tc.tcid = (select tcid from teacher t where tid = (select tid from course c where c.cname = 'sql'));
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+|  1 | PRIMARY     | tc    | ALL  | NULL          | NULL | NULL    | NULL |    3 | Using where |
+|  2 | SUBQUERY    | t     | ALL  | NULL          | NULL | NULL    | NULL |    6 | Using where |
+|  3 | SUBQUERY    | c     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+id值如果不同,id值越大越优先被查询,即从最内层的的子查询进行查询.
+即:在嵌套子查询时,先查最内层,再查外层,由里到外
+
+例:子查询+嵌套查询来实现查询教授SQL课程的老师的描述
+explain select t.tname,tc.tcdesc from teacher t,teacherCard tc where t.tcid = tc.tcid and t.tid = (select c.tid from course c where c.cname = 'sql');	
+	
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra                          |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+|  1 | PRIMARY     | tc    | ALL  | NULL          | NULL | NULL    | NULL |    3 |                                |
+|  1 | PRIMARY     | t     | ALL  | NULL          | NULL | NULL    | NULL |    6 | Using where; Using join buffer |
+|  2 | SUBQUERY    | c     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where                    |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+
+
+4.select_type :PRIMARY     包含子查询SQL中的主查询(最外层的查询)  SUBQUERY:非主查询,即子查询,非最外层  SIMPLE:简单查询(不包含子查询,nuion连接)
+		DERIVED:衍生查询		UNION: 衍生表连表   UNION RESULT:告知union表的id,告知开发人员哪些表之间存在union查询
+	DERIVED:衍生查询,在查询的时候用到了临时表,a.在from子查询中只有一张表  b.在from子查询中有table1,table2,则table1就是衍生表 derived
+例: explain select cname from (select * from course where tid in (1,2)) cr;
++----+-------------+------------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table      | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+------------+------+---------------+------+---------+------+------+-------------+
+|  1 | PRIMARY     | <derived2> | ALL  | NULL          | NULL | NULL    | NULL |    3 |             |
+|  2 | DERIVED     | course     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where |
++----+-------------+------------+------+---------------+------+---------+------+------+-------------+
+<derived2> 表示是通过id为2的子查询得到的衍生表
+例:explain select cname from (select * from course where tid = 1 union select * from course where tid = 2) cr;
++----+--------------+------------+------+---------------+------+---------+------+------+-------------+
+| id | select_type  | table      | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+--------------+------------+------+---------------+------+---------+------+------+-------------+
+|  1 | PRIMARY      | <derived2> | ALL  | NULL          | NULL | NULL    | NULL |    3 |             |
+|  2 | DERIVED      | course     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where |
+|  3 | UNION        | course     | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where |
+| NULL | UNION RESULT | <union2,3> | ALL  | NULL          | NULL | NULL    | NULL | NULL |             |
++----+--------------+------------+------+---------------+------+---------+------+------+-------------+
+ 及table1为DERIVED,table2为UNION 
+
+
+select_type及type详解:
+	select_type:查询类型,type索引类型
+	常用type类型:system>const>eq_ref>ref>range>index>all	其中system>const>只是理想情况,实际能达到ref>range
+	要对type进行优化的前提:有索引
+
+
+system: 只有一条数据的系统表,或 衍生表只有一条数据的主查询
+create table test01(tid int,tname varchar(20));
+insert into test01 values (1,'a');
+alter table test01 add constraint tid_pk primary key(tid);		//创建主键索引
+explain select * from (select * from test01) t;	
+| id | select_type | table      | type   | possible_keys | key  | key_len | ref  | rows | Extra |
++----+-------------+------------+--------+---------------+------+---------+------+------+-------+
+|  1 | PRIMARY     | <derived2> | system | NULL          | NULL | NULL    | NULL |    1 |       |
+|  2 | DERIVED     | test01     | ALL    | NULL          | NULL | NULL    | NULL |    1 |       |
++----+-------------+------------+--------+---------------+------+---------+------+------+-------+
+上述情况即为衍生表只有一条数据的主查询
+
+
+const:仅仅能够查一条数据的sql语句就是const,用于primary key 或者unique索引
+mysql> explain select * from test01 where tid=1;
++----+-------------+--------+-------+---------------+---------+---------+-------+------+-------+
+| id | select_type | table  | type  | possible_keys | key     | key_len | ref   | rows | Extra |
++----+-------------+--------+-------+---------------+---------+---------+-------+------+-------+
+|  1 | SIMPLE      | test01 | const | PRIMARY       | PRIMARY | 4       | const |    1 |       |
++----+-------------+--------+-------+---------------+---------+---------+-------+------+-------+
+mysql> explain select * from test01 where tname='a';
++----+-------------+--------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table  | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+--------+------+---------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | test01 | ALL  | NULL          | NULL | NULL    | NULL |    1 | Using where |
++----+-------------+--------+------+---------------+------+---------+------+------+-------------+
+
+
+
+eq_ref: 唯一性索引,对于每个索引建的查询,返回匹配唯一行数据(有且只有一个,不能多,不能为0)  常见于唯一索引和主键索引
+
+mysql> explain select t.tcid from teacher t,teacherCard tc where tc.tcid = t.tcid;	所使用的索引,t.tcid
+如果teacher表的数据个数和连接查询的数据个数相同,且不重复,一一对应的时候才能满足eq_ref
++----+-------------+-------+--------+---------------+---------+---------+-------------+------+-------------+
+| id | select_type | table | type   | possible_keys | key     | key_len | ref         | rows | Extra       |
++----+-------------+-------+--------+---------------+---------+---------+-------------+------+-------------+
+|  1 | SIMPLE      | t     | index  | uk_tcid       | uk_tcid | 5       | NULL        |    3 | Using index |
+|  1 | SIMPLE      | tc    | eq_ref | PRIMARY       | PRIMARY | 4       | myDB.t.tcid |    1 | Using index |
++----+-------------+-------+--------+---------------+---------+---------+-------------+------+-------------+
+作为最外层查询的,外键和连接表的主键相同,不存在为0,即不匹配的情况
+
+ref:非唯一性索引,对每一个索引建的查询,返回匹配的所有行(0,多)
+数据准备:为teacher表多加一行数据实现
+mysql> explain select t.tcid from teacher t,teacherCard tc where tc.tcid = t.tcid;
++----+-------------+-------+-------+---------------+---------+---------+--------------+------+--------------------------+
+| id | select_type | table | type  | possible_keys | key     | key_len | ref          | rows | Extra                    |
++----+-------------+-------+-------+---------------+---------+---------+--------------+------+--------------------------+
+|  1 | SIMPLE      | tc    | index | PRIMARY       | PRIMARY | 4       | NULL         |    3 | Using index              |
+|  1 | SIMPLE      | t     | ref   | uk_tcid       | uk_tcid | 5       | myDB.tc.tcid |    1 | Using where; Using index |
++----+-------------+-------+-------+---------------+---------+---------+--------------+------+--------------------------+
+
+range:检索指定范围内的数据,where后面是一个范围查询,between,, > ,<,<>,=,in(in有时候会失效)
+alter table teacher constraint index index_tid(tid);
+explain select * from teacher t where t.tid in (1,2);	 结果为all
+explain select * from teacher t where t.tid < 3;	 结果为range;
+explain select * from teacher t where t.tid between 1 and 2;
+
+
+index:查询全部数据	查询全部索引中的数据
+
+all:查询全部数据	查询全部表中的数据		不是索引则需要进行全表扫描
+
+总结:system/const:结果只有一条数据
+eq_ref:结果多条,但是每条数据是唯一的
+ref:结果多条,但是每条数据可以不唯一
+
+5.possible_keys	explain的第四列,可能用到的索引,是一种预测,不是百分百
+key:实际使用的索引	
+
+mysql> explain select t.tid from teacher t; 
++----+-------------+-------+-------+---------------+-----------+---------+------+------+-------------+
+| id | select_type | table | type  | possible_keys | key       | key_len | ref  | rows | Extra       |
++----+-------------+-------+-------+---------------+-----------+---------+------+------+-------------+
+|  1 | SIMPLE      | t     | index | NULL          | index_tid | 5       | NULL |    4 | Using index |
++----+-------------+-------+-------+---------------+-----------+---------+------+------+-------------+
+
+key_len:索引的长度 用于判断复合索引是否被完全使用
+create table test02(name char(20) not null default '');
+alter table test02 add index index_name(name);
+mysql> explain select * from test02 where name = '';      
++----+-------------+--------+------+---------------+------------+---------+-------+------+--------------------------+
+| id | select_type | table  | type | possible_keys | key        | key_len | ref   | rows | Extra                    |
++----+-------------+--------+------+---------------+------------+---------+-------+------+--------------------------+
+|  1 | SIMPLE      | test02 | ref  | index_name    | index_name | 60      | const |    1 | Using where; Using index |
++----+-------------+--------+------+---------------+------------+---------+-------+------+--------------------------+
+我们发现key_len = 60 ,原因:utf8中每个字符占三个字节
+
+alter table test02 add column name1 char(20);		name1可以为空
+alter table test02 add index index_name1(name1);
+mysql> explain select * from test02 where name1 = '';
++----+-------------+--------+------+---------------+-------------+---------+-------+------+-------------+
+| id | select_type | table  | type | possible_keys | key         | key_len | ref   | rows | Extra       |
++----+-------------+--------+------+---------------+-------------+---------+-------+------+-------------+
+|  1 | SIMPLE      | test02 | ref  | index_name1   | index_name1 | 61      | const |    1 | Using where |
++----+-------------+--------+------+---------------+-------------+---------+-------+------+-------------+
+key_len :为61,如果一个字段可以为null,则mysql底层会用一个字节去标识一下这属性
+
+增加一个复合索引: alter table test02 add index index_name_name1(name,name1);
+mysql> explain select * from test02 where name1='';
++----+-------------+--------+-------+---------------+------------------+---------+------+------+--------------------------+
+| id | select_type | table  | type  | possible_keys | key              | key_len | ref  | rows | Extra                    |
++----+-------------+--------+-------+---------------+------------------+---------+------+------+--------------------------+
+|  1 | SIMPLE      | test02 | index | NULL          | index_name_name1 | 121     | NULL |    1 | Using where; Using index |
++----+-------------+--------+-------+---------------+------------------+---------+------+------+--------------------------+
+
+mysql> explain select * from test02 where name=''; 
++----+-------------+--------+------+------------------+------------------+---------+-------+------+--------------------------+
+| id | select_type | table  | type | possible_keys    | key              | key_len | ref   | rows | Extra                    |
++----+-------------+--------+------+------------------+------------------+---------+-------+------+--------------------------+
+|  1 | SIMPLE      | test02 | ref  | index_name_name1 | index_name_name1 | 60      | const |    1 | Using where; Using index |
++----+-------------+--------+------+------------------+------------------+---------+-------+------+--------------------------+
+
+
+ alter table test02 add column name2 varchar(20);	增加一个name2为可变长字符串
+alter table test02 add index index_name2(name2);
+
+mysql> explain select * from test02 where name2 = '';
++----+-------------+--------+------+---------------+-------------+---------+-------+------+-------------+
+| id | select_type | table  | type | possible_keys | key         | key_len | ref   | rows | Extra       |
++----+-------------+--------+------+---------------+-------------+---------+-------+------+-------------+
+|  1 | SIMPLE      | test02 | ref  | index_name2   | index_name2 | 63      | const |    1 | Using where |
++----+-------------+--------+------+---------------+-------------+---------+-------+------+-------------+
+此时 key_len:63  用一个字节标识null,用两个字节标识可变长
+utf8:一个字符3字节	gbk:一个字符两字节	latin:一个字符一个字节
+
+
+6.ref 属性,注意与type中的ref区分
+作用: 指明当前表所参照的字段,如果是常量,则为const
+mysql> explain select * from course c,teacher t where c.tid = t.tid and t.tname = 'tw';    
++----+-------------+-------+------+-----------------------+-------------+---------+-------+------+--------------------------------+
+| id | select_type | table | type | possible_keys         | key         | key_len | ref   | rows | Extra                          |
++----+-------------+-------+------+-----------------------+-------------+---------+-------+------+--------------------------------+
+|  1 | SIMPLE      | t     | ref  | index_tid,index_tname | index_tname | 63      | const |    1 | Using where                    |
+|  1 | SIMPLE      | c     | ALL  | NULL                  | NULL        | NULL    | NULL  |    4 | Using where; Using join buffer |
++----+-------------+-------+------+-----------------------+-------------+---------+-------+------+--------------------------------+
+t.tname = 'tw';   则ref为const
+
+mysql> alter table course add index tid_index(tid);
+mysql> explain select * from course c,teacher t where c.tid = t.tid and t.tname = 'tw';
++----+-------------+-------+------+-----------------------+-------------+---------+------------+------+-------------+
+| id | select_type | table | type | possible_keys         | key         | key_len | ref        | rows | Extra       |
++----+-------------+-------+------+-----------------------+-------------+---------+------------+------+-------------+
+|  1 | SIMPLE      | t     | ref  | index_tid,index_tname | index_tname | 63      | const      |    1 | Using where |
+|  1 | SIMPLE      | c     | ref  | tid_index             | tid_index   | 5       | myDB.t.tid |    1 | Using where |
++----+-------------+-------+------+-----------------------+-------------+---------+------------+------+-------------+
+ c.tid = t.tid 表名ref 为myDB.t.tid 
+
+7.rows:被索引优化查询的数据个数
+mysql> explain select * from course c,teacher t where c.tid = t.tid and t.tname = '张老师';
++----+-------------+-------+------+-----------------------+-------------+---------+------------+------+-------------+
+| id | select_type | table | type | possible_keys         | key         | key_len | ref        | rows | Extra       |
++----+-------------+-------+------+-----------------------+-------------+---------+------------+------+-------------+
+|  1 | SIMPLE      | t     | ref  | index_tid,index_tname | index_tname | 63      | const      |    1 | Using where |
+|  1 | SIMPLE      | c     | ref  | tid_index             | tid_index   | 5       | myDB.t.tid |    1 | Using where |
++----+-------------+-------+------+-----------------------+-------------+---------+------------+------+-------------+
+
+8.Extra:额外属性
+	using filesort :性能消耗过大:需要"额外"的一次排序(查询);
+mysql> create table test03( a1 char(3),a2 char(3),a3 char(3),index index_a1(a1),index index_a2(a2), index index_a3(a3));
+mysql> explain select * from test03 where a1 = ' ' order by a2;    
++----+-------------+--------+------+---------------+----------+---------+-------+------+-----------------------------+
+| id | select_type | table  | type | possible_keys | key      | key_len | ref   | rows | Extra                       |
++----+-------------+--------+------+---------------+----------+---------+-------+------+-----------------------------+
+|  1 | SIMPLE      | test03 | ref  | index_a1      | index_a1 | 10      | const |    1 | Using where; Using filesort |
++----+-------------+--------+------+---------------+----------+---------+-------+------+-----------------------------+
+在建立表时就为这个表添加了索引,根据索引查询,又根据其他属性排序:Using filesort
+结论:对于单索引,如果排序和查找的是同一个字段,则不会出现using filesort,如果排序和查找的不是同一个字段就会出现这个情况
+对于复合索引:不能跨列(最佳左前缀)
++----+-------------+--------+------+----------------+----------------+---------+-------+------+------------------------------------------+
+| id | select_type | table  | type | possible_keys  | key            | key_len | ref   | rows | Extra                                    |
++----+-------------+--------+------+----------------+----------------+---------+-------+------+------------------------------------------+
+|  1 | SIMPLE      | test03 | ref  | index_a1_a2_a3 | index_a1_a2_a3 | 10      | const |    1 | Using where; Using index; Using filesort |
++----+-------------+--------+------+----------------+----------------+---------+-------+------+------------------------------------------+
+跨了一个a2,不是最佳左前缀
+小结:where和order by按照复合索引的顺序使用,不要跨列和跨行
+
+using temporary:性能损耗过大,用到了临时表,一般出现在group by中
+mysql> explain select a1 from test03 where a1 in('1','2','3') group by a2;
++----+-------------+--------+-------+----------------+----------------+---------+------+------+-----------------------------------------------------------+
+| id | select_type | table  | type  | possible_keys  | key            | key_len | ref  | rows | Extra                                                     |
++----+-------------+--------+-------+----------------+----------------+---------+------+------+-----------------------------------------------------------+
+|  1 | SIMPLE      | test03 | index | index_a1_a2_a3 | index_a1_a2_a3 | 30      | NULL |    1 | Using where; Using index; Using temporary; Using filesort |
++----+-------------+--------+-------+----------------+----------------+---------+------+------+-----------------------------------------------------------+
+相当于查询出来之后,又按照不同的列去分组,系统需要通过这个临时表再继续查询一次,才能得到我们想要的结果
+
+using index: 性能提升,索引覆盖,原因:此sql查询不读取源文件,只从索引文件中获取数据,不需要回表查询;
+索引覆盖时,会对possible_keys 和 key有影响:
+a.如果没有where,则索引只出现在key中
+b.如果有where,则索引出在key和possible_keys中.
+
+using where: 需要回表查询
+impossible where: where 子句永远为false
+ sing join buffer:增加了链接缓存(mysql底层修改了底层语言)
+mysql> explain select a1 from test03 where 2 = 3;
++----+-------------+-------+------+---------------+------+---------+------+------+------------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra            |
++----+-------------+-------+------+---------------+------+---------+------+------+------------------+
+|  1 | SIMPLE      | NULL  | NULL | NULL          | NULL | NULL    | NULL | NULL | Impossible WHERE |
++----+-------------+-------+------+---------------+------+---------+------+------+------------------+
+
+八.SQL优化示例
+create table test03(
+a1 int(4) not null,
+a2 int(4) not null,
+a3 int(4) not null,
+a4 int(4) not null
+);
+alter table test03 add index index_a1_a2_a3_a4(a1,a2,a3,a4);
+
+1.select a1,a2,a3,a4 from test03 where a1=1 and a2=2 and a3= 3 and a4 = 4;		--推荐写法,因为索引的使用顺序和复合索引的顺序一致
+2.select a1,a2,a3,a4 from test03 where a1=1 and a2=2 and a4 = 4 and a3= 3;		--同上一结果一致,但是而系统的SQL优化器帮我们优化后其结构都是一样的,sql在真正直向前,优化器调整了SQL语句,但是并不推荐这样的写法
+3.select a1,a2,a3,a4 from test03 where a1=1 and a2=2 and a4 = 4 order by a3;
+mysql> explain select a1,a2,a3,a4 from test03 where a1=1 and a2=2 and a4 = 4 order by a3;
++----+-------------+--------+------+-------------------+-------------------+---------+-------------+------+--------------------------+
+| id | select_type | table  | type | possible_keys     | key               | key_len | ref         | rows | Extra                    |
++----+-------------+--------+------+-------------------+-------------------+---------+-------------+------+--------------------------+
+|  1 | SIMPLE      | test03 | ref  | index_a1_a2_a3_a4 | index_a1_a2_a3_a4 | 8       | const,const |    1 | Using where; Using index |
++----+-------------+--------+------+-------------------+-------------------+---------+-------------+------+--------------------------+
+Using where 需要回表查询,Using index则不需要回表查询,表明此SQL语句一部分不需要回表查询,一部分需要回表查询,a1,a2按照顺序给出了应用到了索引,a4跨列了,索引不能应用索引,从key_ref为8就可以看出只有a1,a2使用到了索引.
+4.select a1,a2,a3,a4 from test03 where a1=1 and a4 = 4 order by a3;
+mysql> explain select a1,a2,a3,a4 from test03 where a1=1 and a4 = 4 order by a3;
++----+-------------+--------+------+-------------------+-------------------+---------+-------+------+------------------------------------------+
+| id | select_type | table  | type | possible_keys     | key               | key_len | ref   | rows | Extra                                    |
++----+-------------+--------+------+-------------------+-------------------+---------+-------+------+------------------------------------------+
+|  1 | SIMPLE      | test03 | ref  | index_a1_a2_a3_a4 | index_a1_a2_a3_a4 | 4       | const |    1 | Using where; Using index; Using filesort |
++----+-------------+--------+------+-------------------+-------------------+---------+-------+------+------------------------------------------+
+ Using filesort(文件内排序) 性能消耗过大,需要额外的一次排序,因此不要跨列使用,where 和order by拼接起来,无关where中已经失效的列
+5.select a1,a2,a3,a4 from test03 where a1=1 and a4 = 4 order by a2,a3;
+mysql> explain select a1,a2,a3,a4 from test03 where a1=1 and a4 = 4 order by a2,a3;
++----+-------------+--------+------+-------------------+-------------------+---------+-------+------+--------------------------+
+| id | select_type | table  | type | possible_keys     | key               | key_len | ref   | rows | Extra                    |
++----+-------------+--------+------+-------------------+-------------------+---------+-------+------+--------------------------+
+|  1 | SIMPLE      | test03 | ref  | index_a1_a2_a3_a4 | index_a1_a2_a3_a4 | 4       | const |    1 | Using where; Using index |
++----+-------------+--------+------+-------------------+-------------------+---------+-------+------+--------------------------+
+6.总结:如果(a,b,c,d)复合索引 和使用的顺序全部一致,则复合索引全部使用,如果部分一致,则使用部分索引
+where 和 order by 的使用不要跨列;
+
+九.优化案例
+	单表优化,两表优化,三表优化
+(1)create table book( b_id int(4) primary key,name varchar(20) not null,author_id int(4) not null,public_id int(4) not null,type_id int(4) not null);
+insert into book values(1,'t_java',1,1,2);
+insert into book values(2,'t_c',2,1,2);
+insert into book values(3,'t_c',3,2,1);
+insert into book values(4,'t_c',4,2,3);
+查询:查询author_id = 1 且 type_id 为 2 或 3 的b_id
+select b_id from book where  type_id in(2,3) and author_id = 1 order by type_id desc;
+mysql> explain select b_id from book where  type_id in(2,3) and author_id = 1 order by type_id desc;
++----+-------------+-------+------+---------------+------+---------+------+------+-----------------------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra                       |
++----+-------------+-------+------+---------------+------+---------+------+------+-----------------------------+
+|  1 | SIMPLE      | book  | ALL  | NULL          | NULL | NULL    | NULL |    4 | Using where; Using filesort |
++----+-------------+-------+------+---------------+------+---------+------+------+-----------------------------+
+优化1:
+alter table book add index index_bid_typeid_authorid(b_id,type_id,author_id);
+mysql> explain select b_id from book where  type_id in(2,3) and author_id = 1 order by type_id desc;
++----+-------------+-------+-------+---------------+---------------------------+---------+------+------+------------------------------------------+
+| id | select_type | table | type  | possible_keys | key                       | key_len | ref  | rows | Extra                                    |
++----+-------------+-------+-------+---------------+---------------------------+---------+------+------+------------------------------------------+
+|  1 | SIMPLE      | book  | index | NULL          | index_bid_typeid_authorid | 12      | NULL |    4 | Using where; Using index; Using filesort |
++----+-------------+-------+-------+---------------+---------------------------+---------+------+------+------------------------------------------+
+优化2:delete index index_bid_typeid_authorid from book;
+ alter table book add index index_typeid_anthorid_bid(type_id,author_id,b_id);
++----+-------------+-------+-------+---------------------------+---------------------------+---------+------+------+--------------------------+
+| id | select_type | table | type  | possible_keys             | key                       | key_len | ref  | rows | Extra                    |
++----+-------------+-------+-------+---------------------------+---------------------------+---------+------+------+--------------------------+
+|  1 | SIMPLE      | book  | index | index_typeid_anthorid_bid | index_typeid_anthorid_bid | 12      | NULL |    4 | Using where; Using index |
++----+-------------+-------+-------+---------------------------+---------------------------+---------+------+------+--------------------------+
+优化3:select b_id from book where author_id = 1 and type_id in(2,3) order by type_id desc;
+alter table book add index index_authorid_typeid_bid(author_id,type_id,b_id);
+mysql> explain select b_id from book where author_id = 1 and type_id between 2 and 3 order by type_id desc;
++----+-------------+-------+------+---------------------------+---------------------------+---------+-------+------+--------------------------+
+| id | select_type | table | type | possible_keys             | key                       | key_len | ref   | rows | Extra                    |
++----+-------------+-------+------+---------------------------+---------------------------+---------+-------+------+--------------------------+
+|  1 | SIMPLE      | book  | ref  | index_authorid_typeid_bid | index_authorid_typeid_bid | 4       | const |    1 | Using where; Using index |
++----+-------------+-------+------+---------------------------+---------------------------+---------+-------+------+--------------------------+
+小结:a.索引不能跨列使用,保持索引的定义和使用的顺序一致性(最佳左前缀);
+b.索引需要逐步优化
+c.将含in的范围查询放到最后,防止失效
+d.范围查询有时会导致索引失效
+(2)两表优化:
+
+mysql> explain select * from teacher t left outer join course c on c.cid = t.cid where c.cname = 'java';
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra                          |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+|  1 | SIMPLE      | t     | ALL  | NULL          | NULL | NULL    | NULL |    3 |                                |
+|  1 | SIMPLE      | c     | ALL  | NULL          | NULL | NULL    | NULL |    3 | Using where; Using join buffer |
++----+-------------+-------+------+---------------+------+---------+------+------+--------------------------------+
+索引往哪里加: 小表a驱动大表b, where a.id = b.id;双层循环一般建议将数据小的循环放外层,数据大的循环放内层.
+		给经常视同的字段加上索引,对于左外链接给左表加索引,右外链接给右表加索引;
+
+优化1:mysql> explain select * from teacher t left outer join course c on c.cid = t.cid where c.cname = 'java';
++----+-------------+-------+-------+-------------------+-------------------+---------+------+------+--------------------------------+
+| id | select_type | table | type  | possible_keys     | key               | key_len | ref  | rows | Extra                          |
++----+-------------+-------+-------+-------------------+-------------------+---------+------+------+--------------------------------+
+|  1 | SIMPLE      | t     | index | index_teacher_cid | index_teacher_cid | 4       | NULL |    3 | Using index                    |
+|  1 | SIMPLE      | c     | ALL   | NULL              | NULL              | NULL    | NULL |    3 | Using where; Using join buffer |
++----+-------------+-------+-------+-------------------+-------------------+---------+------+------+--------------------------------+
+优化2:mysql> explain select * from teacher t left outer join course c on c.cid = t.cid where c.cname = 'java';
++----+-------------+-------+------+--------------------+--------------------+---------+------------+------+-------------+
+| id | select_type | table | type | possible_keys      | key                | key_len | ref        | rows | Extra       |
++----+-------------+-------+------+--------------------+--------------------+---------+------------+------+-------------+
+|  1 | SIMPLE      | c     | ref  | idnex_course_cname | idnex_course_cname | 63      | const      |    1 | Using where |
+|  1 | SIMPLE      | t     | ref  | index_teacher_cid  | index_teacher_cid  | 4       | myDB.c.cid |    1 | Using index |
++----+-------------+-------+------+--------------------+--------------------+---------+------------+------+-------------+
+(3)三张表优化
+a.小表驱动大表 b.索引建立在经常查询的字段上 
+c.避免失效的原则:
+	复合索引不要跨列或无序使用,最佳左前缀
+	尽量使用全索引匹配,复合索引都用上
+	不要在索引上进行任何操作,如果在索引上操作,那么索引失效
+	复合索引不能使用(!= <>)或 is null (is not null)否则失效
+	sql优化是一个概率事件,需用通过explain推测
+
+十.避免索引失效原则
+概率事件的原因:连接层和引擎层之间是服务层,提供了SQL优化器,对于SQL语句有一定的干扰.
+
+mysql> show index from book;
++-------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| Table | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment |
++-------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+| book  |          0 | PRIMARY  |            1 | b_id        | A         |           4 |     NULL | NULL   |      | BTREE      |         |               |
+| book  |          1 | index_at |            1 | author_id   | A         |           4 |     NULL | NULL   |      | BTREE      |         |               |
+| book  |          1 | index_at |            2 | type_id     | A         |           4 |     NULL | NULL   |      | BTREE      |         |               |
++-------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+
+3 rows in set (0.00 sec)
+
+mysql> explain select * from book where author_id = 1 and type_id =2;
++----+-------------+-------+------+---------------+----------+---------+-------------+------+-------+
+| id | select_type | table | type | possible_keys | key      | key_len | ref         | rows | Extra |
++----+-------------+-------+------+---------------+----------+---------+-------------+------+-------+
+|  1 | SIMPLE      | book  | ref  | index_at      | index_at | 8       | const,const |    1 |       |
++----+-------------+-------+------+---------------+----------+---------+-------------+------+-------+
+可以发现复合索引全部使用,但是如果使用单独的索引,可能不生效
+mysql> explain select * from book where author_id > 1 and type_id =2; 
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | book  | ALL  | index_at      | NULL | NULL    | NULL |    4 | Using where |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+复合索引中如果有> 使得自身及其右侧索引全部失效
+mysql> explain select * from book where author_id = 1 and type_id >2; 
++----+-------------+-------+-------+---------------+----------+---------+------+------+-------------+
+| id | select_type | table | type  | possible_keys | key      | key_len | ref  | rows | Extra       |
++----+-------------+-------+-------+---------------+----------+---------+------+------+-------------+
+|  1 | SIMPLE      | book  | range | index_at      | index_at | 8       | NULL |    1 | Using where |
++----+-------------+-------+-------+---------------+----------+---------+------+------+-------------+
+发现此时复合索引全部生效,说明了概率情况的发生
+------明显的概率问题------
+mysql> explain select * from book where author_id < 1 and type_id =2;             
++----+-------------+-------+-------+---------------+----------+---------+------+------+-------------+
+| id | select_type | table | type  | possible_keys | key      | key_len | ref  | rows | Extra       |
++----+-------------+-------+-------+---------------+----------+---------+------+------+-------------+
+|  1 | SIMPLE      | book  | range | index_at      | index_at | 4       | NULL |    1 | Using where |
++----+-------------+-------+-------+---------------+----------+---------+------+------+-------------+
+复合索引at中两个索引只用了一个
+
+mysql> explain select * from book where author_id < 4 and type_id =2; 
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | book  | ALL  | index_at      | NULL | NULL    | NULL |    4 | Using where |
++----+-------------+-------+------+---------------+------+---------+------+------+-------------+
+仅将1修改为了4,发现复合索引全部失效,说明了SQL优化的索引情况有的时候不适用
+
+总结:索引优化是一个大部分情况都适用的结论,但由于SQL优化器等原因,该结论不是100%正确
+一般而言,对于范围查询来说,范围查询之后的索引失效,及其自身有用,但是其后半部分没用
+
+补救方法:索引覆盖,尽量使用索引覆盖(suing index) 
+例如:(a,b,c)为一个复合索引 select a,b,c from xx... where a= .. and b = ...;	
+
+like 尽量以常量开头,不要以%开头,否则索引失效
+例如: select * from xx where name like '%x%'; 		如果name为索引name索引失效
+如果必须以这样的方式查name,可以使用索引覆盖如:select name from xx where name like '%x%';		可以挽救这一情况
+
+尽量不要使用类型转换(显示,隐式) 否则索引失效
+explain select * from teacher where cname = 123;
+
+mysql> explain select * from teacher where cname = 123;
++----+-------------+---------+------+---------------+------+---------+------+------+-------------+
+| id | select_type | table   | type | possible_keys | key  | key_len | ref  | rows | Extra       |
++----+-------------+---------+------+---------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | teacher | ALL  | index_cname   | NULL | NULL    | NULL |    3 | Using where |
++----+-------------+---------+------+---------------+------+---------+------+------+-------------+
+1 row in set (0.00 sec)
+
+mysql> explain select * from teacher where cname = '123';
++----+-------------+---------+------+---------------+-------------+---------+-------+------+-------------+
+| id | select_type | table   | type | possible_keys | key         | key_len | ref   | rows | Extra       |
++----+-------------+---------+------+---------------+-------------+---------+-------+------+-------------+
+|  1 | SIMPLE      | teacher | ref  | index_cname   | index_cname | 18      | const |    1 | Using where |
++----+-------------+---------+------+---------------+-------------+---------+-------+------+-------------+
+
+尽量不要使用or,否则索引失效
+mysql> explain select * from teacher where cname = '' and cid = 1;
++----+-------------+---------+------+-------------------------------+-------------------+---------+-------+------+-------------+
+| id | select_type | table   | type | possible_keys                 | key               | key_len | ref   | rows | Extra       |
++----+-------------+---------+------+-------------------------------+-------------------+---------+-------+------+-------------+
+|  1 | SIMPLE      | teacher | ref  | index_teacher_cid,index_cname | index_teacher_cid | 4       | const |    1 | Using where |
++----+-------------+---------+------+-------------------------------+-------------------+---------+-------+------+-------------+
+1 row in set (0.00 sec)
+
+mysql> explain select * from teacher where cname = '' or cid = 1;   
++----+-------------+---------+------+-------------------------------+------+---------+------+------+-------------+
+| id | select_type | table   | type | possible_keys                 | key  | key_len | ref  | rows | Extra       |
++----+-------------+---------+------+-------------------------------+------+---------+------+------+-------------+
+|  1 | SIMPLE      | teacher | ALL  | index_teacher_cid,index_cname | NULL | NULL    | NULL |    3 | Using where |
++----+-------------+---------+------+-------------------------------+------+---------+------+------+-------------+
+发现会将or 左侧的索引也失效
+
+十一. 常见优化方法及慢查询SQL排查方法
+	(1)exist和in
+	如果主查询的数据集大,则使用in 效率高
+	如果子查询的数据集大,则使用exist 效率高
+	exist语法:将主查询的结果,放到子查询需要结果中进行条件校验,如果符合校验(是否有数据,如果有数据则校验成功),如果符合校验,则保留数据
+	select cname from teacher where exists(select * from teacher);   --等价于select cname from teacher
+	select cname from teacher where exists(select * from teacher where tid = 9999);
+
+	in:
+	select .. from table where tid in(1,3,5);
+	select * from A where id in(select id from B);		
+	
+	(2)order by 优化:
+	using filesort:在底层有两种算法,双路排序,单路排序(根据IO的次数)
+	MYSQL 4.1 之前默认使用双路排序, 会扫描两次磁盘(1.从硬盘读取排序字段,进行排序(在buffer缓冲区中进行的排序) 2.再次从硬盘获取其他字段)
+		IO较为消耗性能,为了减少性能消耗,改为使用单路排序
+	之后的版本使用单路排序(一次获取全部字段,在buffer中进行排序)但是此种单路排序会有一定的隐患,不一定真的是单路,有可能是多次IO,
+		如果数据量特别大,则无法将所有字段的数据一次性读取完毕,因此会进行分片读取,单路排序比双路排序更依赖buffer
+		单路排序在使用时,如果数据量大,可以考虑调大buffer的大小:	set max_length_for_sort_data = 1024; //将buffer的大小调为1024字节	
+		如果max_length_for_sort_data 值太低,即所需字段的长度比buffer还大,mysql底层会自动从单路转变为双路
+		a.选择使用单路,双路;调整buffer的大小
+		b.避免使用select * ,程序需要计算*所代表的数据
+		c.复合索引不要跨列使用,避免使用using filesort
+		d.保证全部的排序字段,排序的一致性,全部升或全部降
+十二.SQL排查 - 慢查询日志:MySQL提供的一种日志记录,用于记录MySQL中响应时间超过阈值的SQL语句(long_query_type),默认10秒未查出
+	慢查询日志默认是关闭的,开发调优时打开该日志,最终部署时关闭
+	检查是否开启了慢查询日志: show variables like '%slow_query_log';
+	临时开启:set global slow_query_log = 1;	//在内存中开启
+mysql> set global slow_query_log = 1;
+Query OK, 0 rows affected (2.05 sec)
+
+mysql> show variables like '%slow_query_log%';
++---------------------+-----------------------------------+
+| Variable_name       | Value                             |
++---------------------+-----------------------------------+
+| slow_query_log      | ON                                |
+| slow_query_log_file | /var/lib/mysql/centos-64-slow.log |
++---------------------+-----------------------------------+
+	永久开启:/etc/my.cnf 中追加配置:
+[mysqld]	
+slow_query_log = 1;
+slow_query_log_file = /var/lib/mysql/localhost-slow.log	
+	查看默认慢查询阈值
+
+mysql> show variables like '%long_query_time'; 
++-----------------+-----------+
+| Variable_name   | Value     |
++-----------------+-----------+
+| long_query_time | 10.000000 |
++-----------------+-----------+
+临时设置阈值:	set global long_query_time = 5;		修改完成后不会立刻生效		修改完毕后重新登录后起效果
+永久设置:   [mysqld] long_query_time = 5;		//永久改变
+
+模拟慢查询:
+mysql> select sleep(4);
++----------+
+| sleep(4) |
++----------+
+|        0 |
++----------+
+1 row in set (4.02 sec)
+
+查询超过阈值的SQL: show global status like '%slow_queryies%';
+
+mysql> show global status like '%slow_queries%';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| Slow_queries  | 1     |
++---------------+-------+
+我们可以通过日志找到  cat /var/lib/mysql/localhost-slow.log
+可以使用mysqldumpslow工具查看: mysqldumpslow --help 可以查看帮助 可以通过一些过滤条件快速查处需要定位的慢sql
+ --verbose详细
+??--debug debug
+??--help将此文本写入标准输出
+
+??-v详细
+??-d调试
+??-s ORDER要排序的内容（al，at，ar，c，l，r，t），'at'是默认值
+????????????????al：平均锁定时间
+????????????????ar：发送的平均行数
+????????????????at：平均查询时间
+?????????????????c：数
+?????????????????l：锁定时间
+?????????????????r：发送的行
+?????????????????t：查询时间
+??-r反转排序顺序（最后一个而不是第一个）
+??-t NUM只显示前n个查询
+??-a不要将所有数字抽象为N，将字符串抽象为'S'
+??-n NUM个抽象数字，名称中至少有n个数字
+??-g PATTERN grep：仅考虑包含此字符串的stmts
+??-h HOSTNAME * -slow.log文件名的db server主机名（可以是通配符），
+???????????????默认为'*'，即匹配全部
+??-i服务器实例的名称（如果使用mysql.server启动脚本）
+??-l不从总时间中减去锁定时间
+	--获取返回记录最多的三个SQL:
+		mysqldumpslow -s R -t 3	/var/lib/mysql/localhost-slow.log		
+	--获取访问次数最多的三个SQL:
+		mysqldumpslow -s c -t 3 /var/lib/mysql/localhost-slow.log	
+	--按照时间排序,前10条包含left join查询语言的SQL:
+		mysqldumpslow -s t -t 10 -g "left join" /var/lib/mysql/localhost-slow.log
+
+十三. 分析海量数据
+a.模拟海量数据 存储过程/存储函数
+	create database testdata;
+	use testdata;
+create table dept(
+dno int(5) primary key default 0,
+dname varchar(20) not null default '',
+loc varchar(30) default ''
+)engine=innodb default charset=utf8;
+
+create table emp(
+eid int(5) primary key,
+ename varchar(20) not null default '',
+job varchar(20) not null default '',
+deptno int(5) not null default 0
+)engine=innodb default charset=utf8;
+b.通过存储函数插入海量数据
+	存储过程和存储函数:存储过程在语法上没有return 返回值/存储函数存在return
+	创建存储函数:
+		创建随机字符串:	randstring(6) 		用于模拟员工名称
+	delimiter $
+	create function randstring(n int) returns varchar(255)
+	begin
+		declare all_str varchar(100) default 'adfghjklzxcvbnmqwertyuiopASDFGHJKLZXCVBNMQWERTYUIOP';
+		declare return_str varchar(255) default '';
+		declare i int default 0;
+		while i < n
+		do
+			set return_str = concat(return_str,substring(all_str,FLOOR(rand()*52 + 1),1));
+			set i = i +1;
+		end while;
+		return return_str;
+	end$
+ERROR 1418 (HY000): This function has none of DETERMINISTIC, NO SQL, or READS SQL DATA in its declaration and binary logging is enabled (you *might* want to use the less safe log_bin_trust_function_creators variable)
+是因为存储过程/存储函数在创建时与之前的慢查询日志冲突了
+解决冲突:
+	临时解决方式 show variables like '%log_bin_trust_function_creators%;
+mysql> show variables like '%log_bin_trust_function_creators%';
++---------------------------------+-------+
+| Variable_name                   | Value |
++---------------------------------+-------+
+| log_bin_trust_function_creators | OFF   |
++---------------------------------+-------+需要开启这个变量
+
+set global log_bin_trust_function_creators = 1;
+---产生随机整数	
+	delimiter $
+	create function randnum() returns int(5)
+	begin
+		declare i int default 0;
+		set i = FLOOR(rand()*100 + 1);
+		return i;
+	end$
+--通过存储过程插入海量数据: emp员工表中
+set autocommit = 0;				关闭自动提交	
+	create procedure insert_emp(in eid_start int(10),in data_times int(10))
+	begin
+		declare i int default 0;
+		set autocommit = 0;				
+		repeat
+			insert into emp values(eid_start + i,randstring(5),'other',randnum());
+			set i = i + 1;
+			until i = data_times
+		end repeat;
+		commit;
+	end$
+--通过存储过程插入海量的数据: tept
+	create procedure insert_dept(in dno_start int(10),in data_times int(10))
+	begin
+		declare i int default 0;
+		set autocommit = 0;				
+		repeat
+			insert into dept values(dno_start + i,randstring(6),randstring(8));
+			set i = i + 1;
+			until i = data_times
+		end repeat;
+		commit;
+	end$
+--开始插入数据
+清表:truncate table xxx;
+	call insert_emp(1000,800000);
+	call insert_dept(10,30);
+c.分析海量数据
+show profiles;	--默认关闭		会记录profiles打开之后的所有SQL记录,只能看到总共消费的时间,不能看待各个硬件消费的时间
+show variables like '%profiling%';
+mysql> set profiling = on; 
+mysql> show variables like '%profiling%';
++------------------------+-------+
+| Variable_name          | Value |
++------------------------+-------+
+| have_profiling         | YES   |
+| profiling              | ON    |
+| profiling_history_size | 15    |
++------------------------+-------+
+
+--精确分析:sql 整段
+show profile all for quer  2;  查询编号为2的SQL语句的情况
+mysql> show profile all for query 2;
++--------------------------------+----------+----------+------------+-------------------+---------------------+--------------+---------------+---------------+-------------------+-------------------+-------------------+-------+-----------------------+---------------+-------------+
+| Status                         | Duration | CPU_user | CPU_system | Context_voluntary | Context_involuntary | Block_ops_in | Block_ops_out | Messages_sent | Messages_received | Page_faults_major | Page_faults_minor | Swaps | Source_function       | Source_file   | Source_line |
++--------------------------------+----------+----------+------------+-------------------+---------------------+--------------+---------------+---------------+-------------------+-------------------+-------------------+-------+-----------------------+---------------+-------------+
+| starting                       | 0.000013 | 0.000008 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | NULL                  | NULL          |        NULL |
+| Waiting for query cache lock   | 0.000003 | 0.000002 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | try_lock              | sql_cache.cc  |         458 |
+| checking query cache for query | 0.000024 | 0.000019 |   0.000005 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | send_result_to_client | sql_cache.cc  |        1568 |
+| checking permissions           | 0.000004 | 0.000003 |   0.000000 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | check_access          | sql_parse.cc  |        4837 |
+| Opening tables                 | 0.000067 | 0.000055 |   0.000014 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | open_tables           | sql_base.cc   |        4896 |
+| System lock                    | 0.000030 | 0.000024 |   0.000006 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | mysql_lock_tables     | lock.cc       |         299 |
+| Waiting for query cache lock   | 0.000013 | 0.000010 |   0.000002 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | try_lock              | sql_cache.cc  |         458 |
+| init                           | 0.000008 | 0.000006 |   0.000002 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | mysql_select          | sql_select.cc |        2594 |
+| optimizing                     | 0.000003 | 0.000003 |   0.000000 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | optimize              | sql_select.cc |         865 |
+| statistics                     | 0.000005 | 0.000004 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | optimize              | sql_select.cc |        1071 |
+| preparing                      | 0.000005 | 0.000004 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | optimize              | sql_select.cc |        1093 |
+| executing                      | 0.000024 | 0.000021 |   0.000005 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | exec                  | sql_select.cc |        1851 |
+| Sending data                   | 0.186095 | 0.178453 |   0.007167 |                 2 |                   8 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | exec                  | sql_select.cc |        2395 |
+| end                            | 0.000011 | 0.000006 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | mysql_select          | sql_select.cc |        2630 |
+| query end                      | 0.000003 | 0.000003 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | mysql_execute_command | sql_parse.cc  |        4516 |
+| closing tables                 | 0.000007 | 0.000005 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | mysql_execute_command | sql_parse.cc  |        4568 |
+| freeing items                  | 0.000006 | 0.000004 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | mysql_parse           | sql_parse.cc  |        5844 |
+| Waiting for query cache lock   | 0.000002 | 0.000002 |   0.000000 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | try_lock              | sql_cache.cc  |         458 |
+| freeing items                  | 0.000013 | 0.000011 |   0.000003 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | NULL                  | NULL          |        NULL |
+| Waiting for query cache lock   | 0.000002 | 0.000001 |   0.000000 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | try_lock              | sql_cache.cc  |         458 |
+| freeing items                  | 0.000001 | 0.000001 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | NULL                  | NULL          |        NULL |
+| storing result in query cache  | 0.000002 | 0.000002 |   0.000000 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | end_of_result         | sql_cache.cc  |        1024 |
+| logging slow query             | 0.000002 | 0.000001 |   0.000000 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | log_slow_statement    | sql_parse.cc  |        1516 |
+| cleaning up                    | 0.000002 | 0.000001 |   0.000001 |                 0 |                   0 |            0 |             0 |             0 |                 0 |                 0 |                 0 |     0 | dispatch_command      | sql_parse.cc  |        1472 |
++--------------------------------+----------+----------+------------+-------------------+---------------------+--------------+---------------+---------------+-------------------+-------------------+-------------------+-------+-----------------------+---------------+-------------+
+
+mysql> show profile cpu,block io for query 2; 		CPU,IO相关的性能时间消耗
++--------------------------------+----------+----------+------------+--------------+---------------+
+| Status                         | Duration | CPU_user | CPU_system | Block_ops_in | Block_ops_out |
++--------------------------------+----------+----------+------------+--------------+---------------+
+| starting                       | 0.000013 | 0.000008 |   0.000001 |            0 |             0 |
+| Waiting for query cache lock   | 0.000003 | 0.000002 |   0.000001 |            0 |             0 |
+| checking query cache for query | 0.000024 | 0.000019 |   0.000005 |            0 |             0 |
+| checking permissions           | 0.000004 | 0.000003 |   0.000000 |            0 |             0 |
+| Opening tables                 | 0.000067 | 0.000055 |   0.000014 |            0 |             0 |
+| System lock                    | 0.000030 | 0.000024 |   0.000006 |            0 |             0 |
+| Waiting for query cache lock   | 0.000013 | 0.000010 |   0.000002 |            0 |             0 |
+| init                           | 0.000008 | 0.000006 |   0.000002 |            0 |             0 |
+| optimizing                     | 0.000003 | 0.000003 |   0.000000 |            0 |             0 |
+| statistics                     | 0.000005 | 0.000004 |   0.000001 |            0 |             0 |
+| preparing                      | 0.000005 | 0.000004 |   0.000001 |            0 |             0 |
+| executing                      | 0.000024 | 0.000021 |   0.000005 |            0 |             0 |
+| Sending data                   | 0.186095 | 0.178453 |   0.007167 |            0 |             0 |
+| end                            | 0.000011 | 0.000006 |   0.000001 |            0 |             0 |
+| query end                      | 0.000003 | 0.000003 |   0.000001 |            0 |             0 |
+| closing tables                 | 0.000007 | 0.000005 |   0.000001 |            0 |             0 |
+| freeing items                  | 0.000006 | 0.000004 |   0.000001 |            0 |             0 |
+| Waiting for query cache lock   | 0.000002 | 0.000002 |   0.000000 |            0 |             0 |
+| freeing items                  | 0.000013 | 0.000011 |   0.000003 |            0 |             0 |
+| Waiting for query cache lock   | 0.000002 | 0.000001 |   0.000000 |            0 |             0 |
+| freeing items                  | 0.000001 | 0.000001 |   0.000001 |            0 |             0 |
+| storing result in query cache  | 0.000002 | 0.000002 |   0.000000 |            0 |             0 |
+| logging slow query             | 0.000002 | 0.000001 |   0.000000 |            0 |             0 |
+| cleaning up                    | 0.000002 | 0.000001 |   0.000001 |            0 |             0 |
++--------------------------------+----------+----------+------------+--------------+---------------+
+
+
+--全局查询日志: 记录开启之后的全部SQL语句, 全局的记录操作仅仅在调优,开发过程中打开,在上线部署时需要关闭
+show variables like '$general_log%';
+mysql> set global general_log = on;		--开启全局日志
+set global log_output = 'table';		--设置 将全部的SQL记录在表中
+
+set global general_log_file = '/tmp/general.log';		--在文件中显示
+set global log_output = 'file';		--设置 将全部的SQL记录在表中
+Query OK, 0 rows affected (0.06 sec)
+
+mysql> show variables like '%general_log%';
++------------------+----------------------------+
+| Variable_name    | Value                      |
++------------------+----------------------------+
+| general_log      | ON                         |
+| general_log_file | /var/lib/mysql/centos7.log |
++------------------+----------------------------+
+开启后会记录所有数据; 会被记录到mysql.general_log表中
+mysql> select * from mysql.general_log;
++---------------------+---------------------------+-----------+-----------+--------------+---------------------------------+
+| event_time          | user_host                 | thread_id | server_id | command_type | argument                        |
++---------------------+---------------------------+-----------+-----------+--------------+---------------------------------+
+| 2019-08-03 21:40:15 | root[root] @ localhost [] |         7 |         1 | Query        | select * from e,p               |
+| 2019-08-03 21:40:19 | root[root] @ localhost [] |         7 |         1 | Query        | select * from emp               |
+| 2019-08-03 21:40:27 | root[root] @ localhost [] |         7 |         1 | Query        | SELECT DATABASE()               |
+| 2019-08-03 21:40:27 | root[root] @ localhost [] |         7 |         1 | Init DB      | testdata                        |
+| 2019-08-03 21:40:37 | root[root] @ localhost [] |         7 |         1 | Query        | select * from emp               |
+| 2019-08-03 21:44:03 | root[root] @ localhost [] |         7 |         1 | Query        | select * from mysql.general_log |
++---------------------+---------------------------+-----------+-----------+--------------+---------------------------------+
+set global general_log_file = '/tmp/general.log';
+select count(1) from emp;
+
+
+set global general_log_file = '/tmp/general.log';		--在文件中显示
+set global log_output = 'file';		--设置 将全部的SQL记录在表中
+[root@centos7 ~]# cat /tmp/general.log
+/usr/sbin/mysqld, Version: 5.5.62-log (MySQL Community Server (GPL)). started with:
+Tcp port: 3306  Unix socket: /var/lib/mysql/mysql.sock
+Time                 Id Command    Argument
+190803 21:58:48     8 Query     select count(1) from dept
+[root@centos7 ~]# 
+
+
+十四:锁机制 :为了解决因资源共享而造成的并发问题
+分类:
+操作类型:
+	a.读锁(共享锁):对同一个数据(衣服),多个读操作可以同时进行,互不干扰
+	b.写锁(互斥锁):如果当前写操作没有完毕,(买衣服的一系列操作),则无法进行其他的读锁,写锁
+操作范围:
+	a.表锁:一次性对一张表整体加锁,如MyISAM存储引擎使用表锁,开销小,加锁快,无死锁,但锁的范围大,容易发生锁冲突,并发度低
+	b.行锁:一次性对一行数据加锁,如InnoDB处存储引擎使用行锁,开销大,加锁慢,容易出现死锁,锁的范围较小,不易发生锁冲突,并发度高(很小高炉发生高并发问题,脏读,幻读,不可重复读,丢失更新)
+	c.页锁
+
+示例:
+	表锁:
+--自增操作 MYSQL/SQLServer支持,oracle需要借助于序列来实现
+create table teblelock
+(   
+id int primary key auto_increment,			
+name varchar(20)
+)engine myisam;
+	会话: session 每一个访问数据库的dos命令行数据库客户端工具,都是一个会话
+	增加锁:
+		loak table table1 read/write,table2 read/write,....
+	查看加锁的表:
+		show open tables;
+	加读锁:
+		会话0:
+			lock table tablelock read;
+			select * from tablelock;	--可以查询到数据
+			
+			mysql> delete from tablelock where id=2;	--无法增删改
+			ERROR 1099 (HY000): Table 'tablelock' was locked with a READ lock and can't be updated
+			
+			mysql> select * from emp;
+			ERROR 1100 (HY000): Table 'emp' was not locked with LOCK TABLES
+			--如果某一个会话对A表加了read锁,则该会话可以对A表进行读操作,不能进行写操作,对其他表不可读不可写
+		其他会话(会话1):
+			select * from tablelock;		--可以
+			delete from tablelock where id = 2;  --处于等待状态,直到这张表的锁被释放				
+		其他会话(会话2):
+			select * from dept;		--可以查询
+			delete from dept where dno = 101;		--可以对其进行增删改
+		--总结: 
+			会话0给A表加了锁:
+				其他会话的操作:
+					a.可以对其他表(A表外的表)进行读写操作
+					b.可以读写,但是写操作需要等待
+		释放锁: unlock tables;
+		
+	加读锁:
+		会话0:
+			lock table tablelock write;
+			当前会话可以对加了写锁的表做任何操作,但是不能对其他表进行操作
+		其他会话:			
+			对会话0加写锁的表,可以进行增删改查的前提是:等待会话0释放锁
+	MySQL表级锁的锁模式:
+	MyISam在执行查询语句select前,会自动给涉及的所有表加读锁
+	在执行更新操作DML前,会自动给涉及的表加写锁
+	所以对MyISam表进行操作,会有如下的情况:
+	a.对表的读操作加读锁,不会阻塞其他进程(会话)对同一表的读请求,但是会阻塞对同一表的写请求,只有当读锁释放后,才会执行其他进程的写操作
+	b.对表的写操作加写锁,会阻塞其它进程(会话),对用一张表的读和写操作,只有当写锁释放后,才会执行其他进程的写操作 
+
+	分析表锁定:
+		查看哪些表被加了锁: show open tables;
+mysql> show status like 'table%';
++-----------------------+-------+
+| Variable_name         | Value |
++-----------------------+-------+
+| Table_locks_immediate | 39    |	及可能获得的锁
+| Table_locks_waited    | 0     |	需要等待的表锁数(如果该值越大,说明存在越大的锁竞争)	
++-----------------------+-------+
+Table_locks_immediate/	Table_locks_immediate > 5000,建议采用innoDB引擎,否则使用myIsAm引擎	
+
+
+示例: 行锁
+ CREATE TABLE `linelock` (
+  `id` int(5) NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 
+
+--MySQL默认为自动commint,而Oracle默认不会自动commit
+--研究行锁需要取消自动mysql的自动commit
+--关闭自动commit:set autocommit = 0;		start transaction;  begin;
+
+--对行锁情况:
+	a.如果会话X对某条数据a进行DML操作,(研究时:关闭了自动commit的情况下),则其他会话必须等待会话x结束事务后,才能对数据A进行操作
+	b.表锁是通过 unlock table解锁,也可以通过事务解锁;行锁: 是通过事务解锁;
+	c.操作不同的数据,则互不干扰
+
+--行锁的注意事项]
+	a.如果没有索引,则行锁会转化为表锁
+	show index from linelock;
+	altere table linelock add index index_linelock_name(name);
+	会话0: 写操作
+		update linelock set name = 'asda' where name = '6';
+	会话1:写操作 不同数据
+		update linelock set name = 'asda' where name = '5';
+
+
+	会话0: 写操作
+		update linelock set name = 'asda' where name = 6;
+	会话1:写操作 不同数据
+		update linelock set name = 'asda' where name = 5;
+	--强制类型转化会导致索引失效,因此此次操作,会从行锁转化为表锁.导致阻塞
+
+	b.行锁的一种特殊情况,间隙锁:值在范围内,但却不存在
+	
+mysql> select * from linelock;
++----+------+
+| id | name |
++----+------+
+|  1 | a1   |
+|  2 | a2   |
+|  4 | a3   |
+|  5 | asda |
+|  6 | asda |
++----+------+此时表中没有id为3的数据,则id = 3 为间隙,mysql会自动给间隙加锁 -->间隙锁
+行锁:如果有where,则实际的加锁范围.就是where后面的范围(不是实际的值)
+--比较
+	缺点:比表锁性能损耗大
+	优点:并发能力强,效率高
+高并发用InoDB,'否则使用MyISAm
+
+行锁分析:
+	show status like '%innodb_row_lock%';
+mysql> show status like '%innodb_row_lock%';
++-------------------------------+--------+
+| Variable_name                 | Value  |
++-------------------------------+--------+
+| Innodb_row_lock_current_waits | 0      |	当前等待锁的数量
+| Innodb_row_lock_time          | 155817 |	等待总时长,从系统启动到现在一共等待的时间
+| Innodb_row_lock_time_avg      | 22259  |	平均等待时长
+| Innodb_row_lock_time_max      | 50845  |	最大的等待时长
+| Innodb_row_lock_waits         | 7      |	总数量
++-------------------------------+--------+
+
+--如果仅仅是查询数据,能否锁住数据
+	select * from linelock where id = 2 for update;
+
+十五:主从复制 	集群的数据库实现
+优点:负载均衡,失败迁移
+ windows:数据库 主 如果之前计算机中安装过Mysql ,要重新再安装 则需要:先卸载 再安装
+	通过电脑添加或删除来删除暗转
+	还需要删除MySQL缓存文件C:\ProgramData\MySQL
+	删除注册表	regedit 
+	重启计算机
+ linux: 授权远程访问:  grant all privileges on *.* to 'root'@'%' identified bb 'root' with grant option;		flush privileges;
+	关闭防火墙 service iptable stop   systemctl stop filewalled  systemctl disable filewalled
+同步的核心:二进制日志			主:mastr  从:slave
+master:存在一个主database 当数据更新时,会将信息写入到二进制日志中
+slave:存在一个从database,以及IO线程会读写master的二进制日志,将新增的数据存到到relay log拿到二进制日志文件中改变和新增的数据,底层通过SQL线程将数据放入从database中
+	1.master将改变的数据记录在本地的二进制日志中,该过程称之为二进制日志事件
+	2.slave将master的binary log拷贝到自己的relay log日志文件中(中继日志文件)
+	3.中继日志事件将数据读取到自己的数据库之中
+MySQL主从赋值时异步的,串行化的,有延迟
+
+master:slave = 1:n
+
+配置:
+windows(mysql: my.ini)
+linux(mysql: my.cnf)
+配置之前为了无误,先将权限(远程访问),防火墙等处理
+主机(以下代码和操作全在主机windows中操作):
+[mysqld]
+#唯一标识
+server-id=1
+#二进制日志文件所在目录
+log-bin="F:/Mysql5.5/data/mysql-bin"
+#错误记录文件
+log-error="F:/Mysql5.5/data/mysql-error"
+#主从同步时忽略的数据库
+binlog-ignore-db=mysql
+#(可选) 指定主从同步时,同步哪个数据库 
+binlog-do-db=test 
+
+windows主机授权哪台计算机是从slave计算机:
+Grant replication slave,reload,super on *.* to 'root'@'192.162.2.%' identified by 'mysql';
+flush privileges;
+
+mysql> show master status;		查看主机状态,每次再做主从同步前,需要观察主机状态的最新值+
++------------------+----------+--------------+------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |
++------------------+----------+--------------+------------------+
+| mysql-bin.000001 |      107 | test         | mysql            |
++------------------+----------+--------------+------------------+
+
+从机(一下操作在linux中):
+[mysqld]
+server-id=2
+log-bin=mysql-bin
+log-error=mysql-error
+replicate-do-db=test
+
+授权哪台计算机中的数据库是自己的主数据库:
+change master to
+master_host = '192.168.2.2',
+master_user='root',
+master_password='mysql',
+master_port=3306,
+master_log_file='mysql-bin.000001',
+master_log_pos=107;
+如果报错,说明计算机以前做过主从同步 执行stop slave
+
+--开启主从同步
+	slave: start slaves
+--检验
+	show slave status;
+             Slave_IO_Running: No
+            Slave_SQL_Running: Yes		确保二者都是yes,如果不都是yes,看下方的日志
+	 Last_IO_Error: Fatal error: The slave I/O thread stops because master and slave have equal MySQL server ids; these ids must be different for replication to work (or the --replicate-same-server-id option must be used on slave but this does not always make sense; please check the manual before using it).
+从站I / O线程停止，因为主站和从站具有相同的MySQL服务器ID; 这些ID必须不同才能使复制正常工作（或者必须在slave上使用--replicate-same-server-id选项，但这并不总是有意义的;请在使用之前查看手册）。
+
+检查:在主从中分别查看server-id
+show variables like '%server_id%';		发现两者都是1,存在BUG,当前版本的BUG
+解决BUG:	set global server_id = 2;
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

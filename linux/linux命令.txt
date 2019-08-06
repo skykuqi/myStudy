@@ -1,0 +1,36 @@
+hostname	查看计算机名称	centOS-64	存在计算机名,虚拟机名,网络中的名字
+修改计算机名:  /etc/sysconfig/network
+vi	通过文件编辑器打开一个文件	vi 文件夹名/文件名	点击a以后才能编辑	如果使用 shift +zz无法保存使用:wq!
+		单击ecs将推出编辑,shift+zz将保存更改
+cat /etc/sysconfig/network	查看文件
+halt	关机	reboot重启
+
+实现虚拟机和真实机之间的复制粘贴操作
+	点击虚拟机安装:VMware tools	会弹出一个文件夹,把文件夹里的压缩文件打开安装	执行install
+	安装完毕需要重启
+	如果安装失败可以设置共享文件夹:关机-编辑虚拟机设置-共享文件夹
+	文件夹在虚拟机中的目录固定:/mnt/hgfs
+
+ll	查看当前目录的文件详细信息	ls查看有哪些文件
+rpm -ivh .... 运行软件rpm包	需要在当前文件夹下	rpm的安装路径都在usr里
+pwd	查看当前目录的路径
+ls 	查看当前文件夹下的文件
+vi /etc/profile 	配置环境变量路径
+source /etc/profile	刷新环境变量
+tar -zxvf 文件名	解压
+mv 原文件名 修改后文件名 重命名
+cat 文件名		输出文件目录
+cd ..			返回到上一级目录
+上一级目录/xxx start	在上一级目录中启动xxx文件服务	stop则为关闭 status 查看状态
+service iptables stop	关闭防火墙
+ifconfig		网络端口等配置信息
+cat /etc/redhat-release     查看操作系统版本
+yum -y remove mysql-libs-5.1.73-*	删除文件 * 代表通配符
+服务的开机自启 chkconfig mysql on ,chkconfig mysql off
+检查开机是否自动启动: stsysv	
+查看mysql安装路径	ps -ef|grep mysql
+cp /usr/share/mysql/my-huge.cnf  /etc/my.cnf	将/usr/share/mysql/my-huge.cnf 复制到 /etc/my.cnf
+
+
+
+	
